@@ -1,15 +1,12 @@
-# QIDI Slicer (Orca Fork) Profile Configuration Guide
+# QIDI Slicer Agentic Automation Guide
 
 ## Objective
-To programmatically generate or modify custom profiles for QIDI Slicer (based on Orca Slicer/Bambu Studio) to achieve specific print results (e.g., optical transparency) without relying on the GUI.
+To programmatically generate or modify custom configuration profiles for QIDI Slicer (based on Orca Slicer/Bambu Studio) using AI agents without relying on the GUI.
 
 ## File Structure & Locations
-All user customizations are managed in the local repository and symlinked to the user's configuration directory.
+All user customizations are managed in the local repository and symlinked to the user's Windows AppData directory.
 
-**Windows Path:** `%AppData%\QIDIStudio\user\default\` (Symlinked to the repo)
-(Note: If logged in, `default` may be replaced by a numeric User ID).
-
-| Profile Type | Directory | File Extension |
+| Profile Type | Repo Directory | File Extension |
 | :--- | :--- | :--- |
 | **Filament** | `qidi-studio/filament/` | `.json` |
 | **Process** | `qidi-studio/process/` | `.json` |
@@ -17,144 +14,120 @@ All user customizations are managed in the local repository and symlinked to the
 
 ---
 
-## Critical Configuration Rules
+## 🚨 MANDATORY PROFILE ATTRIBUTES 🚨
+For QIDI Studio to successfully recognize and load a new profile, the JSON file **must** contain specific structural metadata. If these are missing or mismatched, the profile will be silently ignored (a "ghost profile").
 
-### 1. Naming & Inheritance (The "Ghost Profile" Fix)
-If a profile does not appear in the slicer dropdown, it is usually due to an incorrect `inherits` value or missing IDs.
+### 1. Mandatory Process Attributes
+A valid process profile (e.g., `PC Case Structural ABS.json`) must have these exact keys at the root level:
 
-*   **Process Profiles:**
-    *   Must inherit from a system base like `0.20mm Standard @Q2`.
-    *   **Crucial:** Do not use `@Qidi Q2` in the inheritance name if the system preset is just `@Q2`.
-    *   **ID Key:** Must use `"print_settings_id"`.
-    *   **Type:** Must include `"type": "process"`.
-    *   **Naming Convention:** The filename, `"print_settings_id"`, and `"name"` attribute (if present) must all match and end with the suffix `(vscode) @Q2`. For example: `My Profile (vscode) @Q2.json`.
-    *   **Mandatory Attributes:** For QIDI to recognize a process profile, the following attributes must be included:
-        ```json
-        "from": "User",
-        "print_settings_id": "<name> (vscode) @Q2",
-        "filename_format": "{input_filename_base}_{filament_type}_{print_time}.gcode",
-        "name": "<name> (vscode) @Q2",
-        "inherits": "0.20mm Standard @Q2"
-        ```
-
-*   **Filament Profiles:**
-    *   Must inherit from a generic base like `Generic PETG @Qidi Q2 0.4 nozzle`.
-    *   **ID Key:** Must use `"filament_settings_id"`.
-    *   **Type:** Must include `"type": "filament"`.
-
-### 2. File Format
-*   **Filament Values:** Almost always stored as **Arrays of Strings** (e.g., `"nozzle_temperature": ["255"]`).
-*   **Process Values:** Mixed. Scalars are strings (e.g., `"layer_height": "0.24"`), but speeds are often arrays (e.g., `"outer_wall_speed": ["20"]`).
-
----
-
-## Parameter Reference: Filament
-*Derived from `Elegoo Rapit PETG Clear (vscode)` profile.*
-
-| JSON Key | Value Type | Description |
-| :--- | :--- | :--- |
-| `type` | String | Must be `"filament"`. |
-| `filament_settings_id` | Array | Unique ID for the profile. |
-| `inherits` | String | Parent profile name. |
-| `filament_flow_ratio` | Array | Extrusion multiplier (e.g., `"1.05"`). |
-| `nozzle_temperature` | Array | Printing temp (e.g., `"255"`). |
-| `nozzle_temperature_initial_layer`| Array | First layer temp. |
-| `hot_plate_temp` | Array | Bed temp. |
-| `fan_min_speed` | Array | Min cooling fan % (e.g., `"0"`). |
-| `fan_max_speed` | Array | Max cooling fan % (e.g., `"20"`). |
-| `fan_cooling_mode` | Array | `0` = Manual/Always On, `1` = Auto. |
-| `filament_max_volumetric_speed` | Array | Flow limit in mm³/s. |
-| `filament_retraction_length` | Array | Retraction distance (mm). |
-| `filament_retraction_speed` | Array | Retraction speed (mm/s). |
-| `filament_deretraction_speed` | Array | Prime speed (mm/s). |
-| `filament_z_hop` | Array | Lift Z height (mm). |
-| `filament_z_hop_types` | Array | `Slope Lift`, `Spiral Lift`, `Normal`. |
-| `filament_wipe` | Array | `1` = On, `0` = Off. |
-
----
-
-## Parameter Reference: Process (Print Settings)
-*Derived from `Optical Clarity (vscode)` and `- test` dump files.*
-
-### Speed & Precision
-| JSON Key | Value Type | Description |
-| :--- | :--- | :--- |
-| `type` | String | Must be `"process"`. |
-| `print_settings_id` | String | Unique ID for the profile. |
-| `outer_wall_speed` | Array | Outer perimeter speed (mm/s). |
-| `inner_wall_speed` | Array | Inner perimeter speed. |
-| `internal_solid_infill_speed` | Array | Solid infill speed. |
-| `top_surface_speed` | Array | Top layer speed. |
-| `travel_speed` | Array | Non-printing movement speed. |
-| `max_travel_detour_distance` | String | Limits detour length for "Avoid Crossing Walls". |
-
-### Dimensions & Layers
-| JSON Key | Value Type | Description |
-| :--- | :--- | :--- |
-| `layer_height` | String | Layer height (mm). |
-| `line_width` | String | Default line width. |
-| `outer_wall_line_width` | String | Width for outer walls. |
-| `top_surface_line_width` | String | Width for top surface. |
-
-### Infill & Patterns
-| JSON Key | Value Type | Description |
-| :--- | :--- | :--- |
-| `sparse_infill_density` | String | Infill % (e.g., `"100%"`). |
-| `sparse_infill_pattern` | String | `rectilinear`, `gyroid`, `zig-zag`, etc. |
-| `internal_solid_infill_pattern` | String | Pattern for solid internal layers. |
-| `top_surface_pattern` | String | Pattern for the very top layer. |
-| `bottom_surface_pattern` | String | Pattern for the very bottom layer. |
-| `reduce_crossing_wall` | String | `1` = Avoid crossing perimeters (reduces stringing). |
-
-### Ironing (Surface Finish)
-| JSON Key | Value Type | Description |
-| :--- | :--- | :--- |
-| `ironing_type` | String | `top`, `all_top`, `no_ironing`. |
-| `ironing_speed` | String | Speed for ironing pass. |
-| `ironing_flow` | String | Flow % during ironing (e.g., `"10%"`). |
-| `ironing_spacing` | String | Space between ironing passes. |
-
-### Walls & Shells
-| JSON Key | Value Type | Description |
-| :--- | :--- | :--- |
-| `wall_loops` | String | Number of wall perimeters. |
-| `top_shell_layers` | String | Number of top solid layers. |
-| `bottom_shell_layers` | String | Number of bottom solid layers. |
-| `seam_position` | String | `nearest`, `aligned`, `back`, `random`. |
-
----
-
-## Workflow for Agents
-
-1.  **Analyze Context:** Check `inherits` keys in existing files to determine the correct printer base name (e.g., `@Q2` vs `@Qidi Q2`).
-2.  **Determine Target:** Decide if parameters belong to Filament (Cooling, Flow, Temp) or Process (Speed, Infill, Layers).
-3.  **Create/Edit JSON:**
-    *   Use the exact keys listed above.
-    *   Ensure proper Type Casting (Arrays vs Strings).
-    *   Always verify the `print_settings_id` matches the filename.
-        *   **Process Validation:** All parameters in the process file must be validated against a sample file in the same `qidi-studio/process/` folder (the sample file name starts with `sample`).
-4.  **Save Location:**
-    *   Filament -> `qidi-studio/filament/`
-    *   Process -> `qidi-studio/process/`
-5.  **Restart Slicer:** QIDI Slicer must be restarted to index new JSON files.
-
-## Example: Transparent PETG Recipe
-To achieve glass-like PETG, apply these overrides:
-
-**Filament:**
 ```json
+{
+  "type": "process",
+  "name": "PC Case Structural ABS", 
+  "print_settings_id": "PC Case Structural ABS", 
+  "from": "User",
+  "inherits": "0.20mm Standard @Q2", 
+  "is_custom_defined": "0",
+  "version": "1.9.0.0",
+  "setting_id": "PC Case Structural ABS"
+}
+```
+* **Rule 1:** `name`, `print_settings_id`, and `setting_id` **MUST** exactly match the filename (minus the `.json` extension).
+* **Rule 2:** `inherits` **MUST** be an exact string match to an existing system process profile (e.g., do not write `@Qidi Q2` if the system profile is `@Q2`).
+
+### 2. Mandatory Filament Attributes
+A valid filament profile (e.g., `Overture ABS white.json`) requires a slightly different header:
+
+```json
+{
+  "type": "filament",
+  "name": "Overture ABS white",
+  "filament_settings_id": ["Overture ABS white"],
+  "setting_id": "Overture ABS white",
+  "from": "User",
+  "inherits": "Generic ABS",
+  "is_custom_defined": "0",
+  "version": "1.9.0.0"
+}
+```
+* **Rule 3 (The Array Rule):** Almost ALL configuration values inside a `filament` JSON file **MUST** be formatted as arrays of strings. (e.g., `"nozzle_temperature": ["260"]`). 
+* **Rule 4:** Process values, conversely, are standard strings (e.g., `"wall_loops": "4"`).
+
+---
+
+## Static Enumerations Dictionary
+When modifying multi-value attributes in process files, only use the exact strings defined below. 
+
+### Infill Patterns (`sparse_infill_pattern` & `internal_solid_infill_pattern`)
+* `"rectilinear"` (Best for internal solid infill/transparency)
+* `"grid"`
+* `"triangles"`
+* `"cubic"` (Best for large structural ABS parts)
+* `"stars"`
+* `"line"`
+* `"concentric"`
+* `"honeycomb"`
+* `"3dhoneycomb"`
+* `"gyroid"` (Excellent all-around strength)
+* `"alignedrectilinear"`
+
+### Seam Positions (`seam_position`)
+* `"nearest"`
+* `"aligned"` (Stacks the seam in a straight vertical line)
+* `"back"` (Forces seam to the rear of the build plate)
+* `"random"` (Spreads the seam out, good for preventing weak points on round objects)
+
+### Support Types (`support_type`)
+* `"normal(auto)"` (Standard grid-based supports)
+* `"tree(auto)"` (Organic tree supports, saves material)
+* `"normal(manual)"`
+* `"tree(manual)"`
+
+### Ironing Types (`ironing_type`)
+* `"top_surface"` (Irons only the absolute highest layer)
+* `"top"` (Irons all upward-facing flat surfaces)
+* `"solid"` (Irons all solid internal layers)
+* `"all"` 
+
+---
+
+## 🔍 How to Find Additional Valid Values (Source Code)
+If an agent or user needs to configure a multi-value attribute that is not listed in the dictionary above, you can find the exact acceptable string values directly in the open-source QIDI Studio codebase: `https://github.com/QIDITECH/QIDIStudio`.
+
+### 1. The Core Engine Definitions (C++)
+The absolute source of truth for the slicing engine is the `PrintConfig` file.
+* **File Path:** `src/libslic3r/PrintConfig.cpp`
+* **How to Read:** Search the file for the attribute name (e.g., `sparse_infill_pattern`). You will find a configuration block mapping the internal C++ enums directly to the exact JSON strings required.
+
+### 2. The UI Configuration Schema (JSON)
+For a machine-readable format mapping what the UI dropdown menus allow:
+* **File Path:** `resources/data/config.json` (or `print_settings.json` / `config_def.json`).
+* **How to Read:** Search for the attribute name. Look for an `"enum_values"` or `"options"` array, which lists exactly what the software expects (e.g., `["nearest", "aligned", "back", "random"]`).
+
+---
+
+## Example Overrides
+
+### 1. Structural ABS (For Process JSON)
+Used for large, warp-prone structural parts like PC cases.
+```json
+"wall_loops": "4",
+"top_shell_layers": "5",
+"bottom_shell_layers": "5",
+"sparse_infill_density": "40",
+"sparse_infill_pattern": "cubic"
+```
+
+### 2. Clear "Glass" PETG (For Filament JSON)
+Used for optical transparency (requires 0% fan and slow speeds).
+```json
+"nozzle_temperature": ["255"],
+"nozzle_temperature_initial_layer": ["255"],
 "fan_min_speed": ["0"],
-"fan_max_speed": ["0"],
+"fan_max_speed": ["20"],
 "fan_cooling_mode": ["0"],
-"nozzle_temperature": ["255"]
+"nozzle_flow_ratio": ["1.05"]
 ```
 
-**Process:**
-```json
-"layer_height": "0.12",
-"outer_wall_speed": ["20"],
-"inner_wall_speed": ["20"],
-"sparse_infill_density": "100%",
-"sparse_infill_pattern": "aligned rectilinear",
-"reduce_crossing_wall": "1"
-```
+---
+*Author: Aniva*
