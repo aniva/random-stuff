@@ -1,0 +1,16 @@
+{
+    "bed_custom_model": "C:/Program Files/QIDIStudio/resources/profiles/Q Series/Q2_bed.stl",
+    "from": "User",
+    "inherits": "Q2 0.4 nozzle",
+    "name": "Q2 0.4 nozzle 01",
+    "printer_extruder_id": [
+        "1"
+    ],
+    "printer_extruder_variant": [
+        "Direct Drive Standard"
+    ],
+    "printer_notes": "support multiple bed types",
+    "printer_settings_id": "Q2 0.4 nozzle 01",
+    "support_multi_bed_types": "1",
+    "version": "2.4.0.70"
+}

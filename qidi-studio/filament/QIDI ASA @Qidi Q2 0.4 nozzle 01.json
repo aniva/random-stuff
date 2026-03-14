@@ -1,0 +1,30 @@
+{
+    "chamber_temperatures": [
+        "60"
+    ],
+    "filament_extruder_variant": [
+        "Direct Drive Standard"
+    ],
+    "filament_max_volumetric_speed": [
+        "17"
+    ],
+    "filament_settings_id": [
+        "QIDI ASA @Qidi Q2 0.4 nozzle 01"
+    ],
+    "from": "User",
+    "hot_plate_temp": [
+        "90"
+    ],
+    "hot_plate_temp_initial_layer": [
+        "90"
+    ],
+    "inherits": "QIDI ASA @Qidi Q2 0.4 nozzle",
+    "name": "QIDI ASA @Qidi Q2 0.4 nozzle 01",
+    "nozzle_temperature": [
+        "270"
+    ],
+    "nozzle_temperature_initial_layer": [
+        "265"
+    ],
+    "version": "2.4.0.70"
+}

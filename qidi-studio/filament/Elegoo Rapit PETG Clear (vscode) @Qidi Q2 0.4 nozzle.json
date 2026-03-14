@@ -1,0 +1,97 @@
+{
+    "activate_air_filtration": [
+        "0"
+    ],
+    "chamber_temperatures": [
+        "45"
+    ],
+    "cool_plate_temp": [
+        "80"
+    ],
+    "cool_plate_temp_initial_layer": [
+        "80"
+    ],
+    "default_filament_colour": [
+        "#C0C0C0"
+    ],
+    "during_print_exhaust_fan_speed": [
+        "10"
+    ],
+    "eng_plate_temp": [
+        "80"
+    ],
+    "eng_plate_temp_initial_layer": [
+        "80"
+    ],
+    "fan_max_speed": [
+        "20"
+    ],
+    "fan_min_speed": [
+        "0"
+    ],
+    "fan_cooling_mode": [
+        "0"
+    ],
+    "filament_deretraction_speed": [
+        "30"
+    ],
+    "filament_extruder_variant": [
+        "Direct Drive Standard"
+    ],
+    "filament_flow_ratio": [
+        "1.05"
+    ],
+    "filament_max_volumetric_speed": [
+        "8"
+    ],
+    "filament_retract_before_wipe": [
+        "70%"
+    ],
+    "filament_retraction_length": [
+        "1"
+    ],
+    "filament_retraction_speed": [
+        "35"
+    ],
+    "filament_settings_id": [
+        "Elegoo Rapit PETG Clear (vscode) @Qidi Q2 0.4 nozzle"
+    ],
+    "filament_wipe": [
+        "1"
+    ],
+    "filament_wipe_distance": [
+        "2"
+    ],
+    "filament_z_hop": [
+        "0.4"
+    ],
+    "filament_z_hop_types": [
+        "Slope Lift"
+    ],
+    "from": "User",
+    "hot_plate_temp": [
+        "80"
+    ],
+    "hot_plate_temp_initial_layer": [
+        "80"
+    ],
+    "inherits": "Generic PETG @Qidi Q2 0.4 nozzle",
+    "name": "Elegoo Rapit PETG Clear (vscode) @Qidi Q2 0.4 nozzle",
+    "nozzle_temperature": [
+        "255"
+    ],
+    "nozzle_temperature_initial_layer": [
+        "255"
+    ],
+    "reduce_fan_stop_start_freq": [
+        "0"
+    ],
+    "supertack_plate_temp": [
+        "80"
+    ],
+    "supertack_plate_temp_initial_layer": [
+        "80"
+    ],
+    "type": "filament",
+    "version": "2.4.1.11"
+}

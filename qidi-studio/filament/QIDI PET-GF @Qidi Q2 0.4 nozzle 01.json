@@ -1,0 +1,24 @@
+{
+    "additional_cooling_fan_speed": [
+        "75"
+    ],
+    "default_filament_colour": [
+        "#FF0000"
+    ],
+    "filament_extruder_variant": [
+        "Direct Drive Standard"
+    ],
+    "filament_settings_id": [
+        "QIDI PET-GF @Qidi Q2 0.4 nozzle 01"
+    ],
+    "from": "User",
+    "inherits": "QIDI PET-GF @Qidi Q2 0.4 nozzle",
+    "name": "QIDI PET-GF @Qidi Q2 0.4 nozzle 01",
+    "overhang_fan_speed": [
+        "70"
+    ],
+    "overhang_fan_threshold": [
+        "50%"
+    ],
+    "version": "0.0.0.0"
+}

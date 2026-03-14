@@ -1,0 +1,21 @@
+{
+    "filament_extruder_variant": [
+        "Direct Drive Standard"
+    ],
+    "filament_max_volumetric_speed": [
+        "18"
+    ],
+    "filament_settings_id": [
+        "Overture PLA Std @Qidi Q2 0.4 nozzle 60 bed"
+    ],
+    "from": "User",
+    "hot_plate_temp": [
+        "60"
+    ],
+    "hot_plate_temp_initial_layer": [
+        "60"
+    ],
+    "inherits": "Overture PLA @Qidi Q2 0.4 nozzle",
+    "name": "Overture PLA Std @Qidi Q2 0.4 nozzle 60 bed",
+    "version": "2.4.0.70"
+}
