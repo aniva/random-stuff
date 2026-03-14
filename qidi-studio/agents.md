@@ -4,16 +4,16 @@
 To programmatically generate or modify custom profiles for QIDI Slicer (based on Orca Slicer/Bambu Studio) to achieve specific print results (e.g., optical transparency) without relying on the GUI.
 
 ## File Structure & Locations
-All user customizations are stored in the user's configuration directory.
+All user customizations are managed in the local repository and symlinked to the user's configuration directory.
 
-**Windows Path:** `%AppData%\QIDIStudio\user\default\`  
+**Windows Path:** `%AppData%\QIDIStudio\user\default\` (Symlinked to the repo)
 (Note: If logged in, `default` may be replaced by a numeric User ID).
 
 | Profile Type | Directory | File Extension |
 | :--- | :--- | :--- |
-| **Filament** | `.../user/default/filament/` | `.json` |
-| **Process** | `.../user/default/process/` | `.json` |
-| **Machine** | `.../user/default/machine/` | `.json` |
+| **Filament** | `qidi-studio/filament/` | `.json` |
+| **Process** | `qidi-studio/process/` | `.json` |
+| **Machine** | `qidi-studio/machine/` | `.json` |
 
 ---
 
@@ -27,6 +27,15 @@ If a profile does not appear in the slicer dropdown, it is usually due to an inc
     *   **Crucial:** Do not use `@Qidi Q2` in the inheritance name if the system preset is just `@Q2`.
     *   **ID Key:** Must use `"print_settings_id"`.
     *   **Type:** Must include `"type": "process"`.
+    *   **Naming Convention:** The filename, `"print_settings_id"`, and `"name"` attribute (if present) must all match and end with the suffix `(vscode) @Q2`. For example: `My Profile (vscode) @Q2.json`.
+    *   **Mandatory Attributes:** For QIDI to recognize a process profile, the following attributes must be included:
+        ```json
+        "from": "User",
+        "print_settings_id": "<name> (vscode) @Q2",
+        "filename_format": "{input_filename_base}_{filament_type}_{print_time}.gcode",
+        "name": "<name> (vscode) @Q2",
+        "inherits": "0.20mm Standard @Q2"
+        ```
 
 *   **Filament Profiles:**
     *   Must inherit from a generic base like `Generic PETG @Qidi Q2 0.4 nozzle`.
@@ -123,9 +132,10 @@ If a profile does not appear in the slicer dropdown, it is usually due to an inc
     *   Use the exact keys listed above.
     *   Ensure proper Type Casting (Arrays vs Strings).
     *   Always verify the `print_settings_id` matches the filename.
+        *   **Process Validation:** All parameters in the process file must be validated against a sample file in the same `qidi-studio/process/` folder (the sample file name starts with `sample`).
 4.  **Save Location:**
-    *   Filament -> `.../filament/`
-    *   Process -> `.../process/`
+    *   Filament -> `qidi-studio/filament/`
+    *   Process -> `qidi-studio/process/`
 5.  **Restart Slicer:** QIDI Slicer must be restarted to index new JSON files.
 
 ## Example: Transparent PETG Recipe
