@@ -1,0 +1,10 @@
+{
+  "type": "process",
+  "print_settings_id": "PC Case Structural ABS",
+  "inherits": "0.20mm Standard @Q2",
+  "wall_loops": "4",
+  "top_shell_layers": "5",
+  "bottom_shell_layers": "5",
+  "sparse_infill_density": "40",
+  "sparse_infill_pattern": "cubic"
+}
