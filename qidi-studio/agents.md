@@ -92,7 +92,7 @@ When modifying multi-value attributes in process files, only use the exact strin
 ---
 
 ## 🔍 How to Find Additional Valid Values (Source Code)
-If an agent or user needs to configure a multi-value attribute that is not listed in the dictionary above, you can find the exact acceptable string values directly in the open-source QIDI Studio codebase: `https://github.com/QIDITECH/QIDIStudio`.
+If an agent or user needs to configure a multi-value attribute that is not listed in the dictionary above, you can find the exact acceptable string values directly in the open‑source QIDI Studio codebase: [https://github.com/QIDITECH/QIDIStudio](https://github.com/QIDITECH/QIDIStudio).
 
 ### 1. The Core Engine Definitions (C++)
 The absolute source of truth for the slicing engine is the `PrintConfig` file.
