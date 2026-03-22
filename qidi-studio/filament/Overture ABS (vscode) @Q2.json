@@ -21,10 +21,10 @@
         "#000000"
     ],
     "eng_plate_temp": [
-        "95"
+        "0"
     ],
     "eng_plate_temp_initial_layer": [
-        "95"
+        "0"
     ],
     "fan_max_speed": [
         "50"
@@ -55,10 +55,10 @@
     ],
     "from": "User",
     "hot_plate_temp": [
-        "0"
+        "95"
     ],
     "hot_plate_temp_initial_layer": [
-        "0"
+        "95"
     ],
     "inherits": "Overture ABS @Qidi Q2 0.4 nozzle",
     "nozzle_temperature": [

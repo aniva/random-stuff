@@ -113,12 +113,12 @@ For a machine-readable format mapping what the UI dropdown menus allow:
 ## Build Plate Mapping
 Specific physical build plates are used for different material families. When an agent creates or modifies a filament profile, it MUST assign the target temperature to the correct plate JSON attribute.
 
-* **ABS / ASA:** Printed on the **Qidi Q2 Engineering Smooth PEI plate**.
-  * JSON Attributes to set: `eng_plate_temp` and `eng_plate_temp_initial_layer`
+* **ABS / ASA:** Printed on the **Q2 Dual Sided Smooth Plate**.
+  * JSON Attributes to set: `hot_plate_temp` and `hot_plate_temp_initial_layer`
 * **PLA / PETG:** Printed on the **Qidi Cool Plate Pro**.
   * JSON Attributes to set: `cool_plate_temp` and `cool_plate_temp_initial_layer`
-* **General / Fallback:** Stock textured PEI plate.
-  * JSON Attributes to set: `hot_plate_temp` and `hot_plate_temp_initial_layer`
+* **General / Fallback:** Stock Textured PEI plate.
+  * JSON Attributes to set: `textured_plate_temp` and `textured_plate_temp_initial_layer`
 
 ```json
 "eng_plate_temp": ["100"],
