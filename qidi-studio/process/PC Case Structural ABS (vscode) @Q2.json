@@ -1,13 +1,18 @@
 {
-  "from": "User",
-  "print_settings_id": "PC Case Structural ABS (vscode) @Q2",
-  "filename_format": "{input_filename_base}_{filament_type[0]}_{print_time}.gcode",
-  "name": "PC Case Structural ABS (vscode) @Q2",
-  "inherits": "0.20mm Standard @Q2",
-  "wall_loops": "4",
-  "top_shell_layers": "5",
-  "bottom_shell_layers": "5",
-  "sparse_infill_density": "40%",
-  "sparse_infill_pattern": "cubic",
-  "version": "1.0.0.0"
+    "bottom_shell_layers": "5",
+    "filename_format": "{input_filename_base}_{filament_type[0]}_{print_time}.gcode",
+    "from": "User",
+    "inherits": "0.20mm Standard @Q2",
+    "name": "PC Case Structural ABS (vscode) @Q2",
+    "print_extruder_id": [
+        "1"
+    ],
+    "print_extruder_variant": [
+        "Direct Drive Standard"
+    ],
+    "print_settings_id": "PC Case Structural ABS (vscode) @Q2",
+    "sparse_infill_density": "40%",
+    "sparse_infill_pattern": "cubic",
+    "version": "1.0.0.0",
+    "wall_loops": "4"
 }
