@@ -18,41 +18,44 @@ All user customizations are managed in the local repository and symlinked to the
 For QIDI Studio to successfully recognize and load a new profile, the JSON file **must** contain specific structural metadata. If these are missing or mismatched, the profile will be silently ignored (a "ghost profile").
 
 ### 1. Mandatory Process Attributes
-A valid process profile (e.g., `PC Case Structural ABS.json`) must have these exact keys at the root level:
+A valid process profile must have these exact keys at the root level:
 
-```json
+'''json
 {
   "type": "process",
-  "name": "PC Case Structural ABS", 
-  "print_settings_id": "PC Case Structural ABS", 
+  "name": "PC Case Structural ABS (vscode) @Q2", 
+  "print_settings_id": "PC Case Structural ABS (vscode) @Q2", 
   "from": "User",
   "inherits": "0.20mm Standard @Q2", 
   "is_custom_defined": "0",
   "version": "1.9.0.0",
-  "setting_id": "PC Case Structural ABS"
+  "setting_id": "PC Case Structural ABS (vscode) @Q2"
 }
-```
+'''
 * **Rule 1:** `name`, `print_settings_id`, and `setting_id` **MUST** exactly match the filename (minus the `.json` extension).
 * **Rule 2:** `inherits` **MUST** be an exact string match to an existing system process profile (e.g., do not write `@Qidi Q2` if the system profile is `@Q2`).
 
 ### 2. Mandatory Filament Attributes
-A valid filament profile (e.g., `Overture ABS white.json`) requires a slightly different header:
+A valid filament profile requires a slightly different header:
 
-```json
+'''json
 {
   "type": "filament",
-  "name": "Overture ABS white",
-  "filament_settings_id": ["Overture ABS white"],
-  "setting_id": "Overture ABS white",
+  "name": "Overture ABS white (vscode) @Q2",
+  "filament_settings_id": ["Overture ABS white (vscode) @Q2"],
+  "setting_id": "Overture ABS white (vscode) @Q2",
   "from": "User",
   "inherits": "Generic ABS",
   "is_custom_defined": "0",
   "version": "1.9.0.0"
 }
-```
+'''
 * **Rule 3 (The Array Rule):** Almost ALL configuration values inside a `filament` JSON file **MUST** be formatted as arrays of strings. (e.g., `"nozzle_temperature": ["260"]`). 
 * **Rule 4:** Process values, conversely, are standard strings (e.g., `"wall_loops": "4"`).
-* **Rule 5 (The VSCode Suffix):** To instantly identify AI-generated profiles, the file name and all internal ID strings (`name`, `setting_id`, and `print_settings_id` or `filament_settings_id`) MUST ALWAYS end with the exact suffix ` (vscode) @Q2`. (e.g., `Overture ABS (vscode) @Q2`).
+
+### 3. The Identification Rule
+* **Rule 5 (The VSCode Suffix):** To instantly identify AI-generated profiles and prevent conflicts, the file name and all internal ID strings (`name`, `setting_id`, and `print_settings_id` or `filament_settings_id`) MUST ALWAYS end with the exact suffix ` (vscode) @Q2`.
+
 ---
 
 ## Static Enumerations Dictionary
@@ -92,7 +95,7 @@ When modifying multi-value attributes in process files, only use the exact strin
 ---
 
 ## 🔍 How to Find Additional Valid Values (Source Code)
-If an agent or user needs to configure a multi-value attribute that is not listed in the dictionary above, you can find the exact acceptable string values directly in the open‑source QIDI Studio codebase: [https://github.com/QIDITECH/QIDIStudio](https://github.com/QIDITECH/QIDIStudio).
+If an agent or user needs to configure a multi-value attribute that is not listed in the dictionary above, you can find the exact acceptable string values directly in the open-source QIDI Studio codebase: `https://github.com/QIDITECH/QIDIStudio`.
 
 ### 1. The Core Engine Definitions (C++)
 The absolute source of truth for the slicing engine is the `PrintConfig` file.
@@ -110,24 +113,24 @@ For a machine-readable format mapping what the UI dropdown menus allow:
 
 ### 1. Structural ABS (For Process JSON)
 Used for large, warp-prone structural parts like PC cases.
-```json
+'''json
 "wall_loops": "4",
 "top_shell_layers": "5",
 "bottom_shell_layers": "5",
 "sparse_infill_density": "40",
 "sparse_infill_pattern": "cubic"
-```
+'''
 
 ### 2. Clear "Glass" PETG (For Filament JSON)
 Used for optical transparency (requires 0% fan and slow speeds).
-```json
+'''json
 "nozzle_temperature": ["255"],
 "nozzle_temperature_initial_layer": ["255"],
 "fan_min_speed": ["0"],
 "fan_max_speed": ["20"],
 "fan_cooling_mode": ["0"],
 "nozzle_flow_ratio": ["1.05"]
-```
+'''
 
 ---
 *Author: Aniva*
