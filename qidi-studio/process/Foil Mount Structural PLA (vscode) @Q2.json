@@ -10,7 +10,7 @@
     "print_extruder_variant": [
         "Direct Drive Standard"
     ],
-    "print_settings_id": "Foil Mount Structural PLA",
+    "print_settings_id": "Foil Mount Structural PLA (vscode) @Q2",
     "sparse_infill_density": "60%",
     "sparse_infill_pattern": "gyroid",
     "support_style": "tree_slim",

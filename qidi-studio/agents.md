@@ -52,7 +52,7 @@ A valid filament profile (e.g., `Overture ABS white.json`) requires a slightly d
 ```
 * **Rule 3 (The Array Rule):** Almost ALL configuration values inside a `filament` JSON file **MUST** be formatted as arrays of strings. (e.g., `"nozzle_temperature": ["260"]`). 
 * **Rule 4:** Process values, conversely, are standard strings (e.g., `"wall_loops": "4"`).
-
+* **Rule 5 (The VSCode Suffix):** To instantly identify AI-generated profiles, the file name and all internal ID strings (`name`, `setting_id`, and `print_settings_id` or `filament_settings_id`) MUST ALWAYS end with the exact suffix ` (vscode) @Q2`. (e.g., `Overture ABS (vscode) @Q2`).
 ---
 
 ## Static Enumerations Dictionary
