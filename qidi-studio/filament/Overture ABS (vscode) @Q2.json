@@ -11,20 +11,38 @@
     "cool_plate_temp_initial_layer": [
         "0"
     ],
+    "chamber_temperatures": [
+        "60"
+    ],
+    "close_fan_the_first_x_layers": [
+        "1"
+    ],
     "default_filament_colour": [
         "#000000"
     ],
     "eng_plate_temp": [
-        "100"
+        "95"
     ],
     "eng_plate_temp_initial_layer": [
-        "100"
+        "95"
     ],
     "fan_max_speed": [
-        "0"
+        "50"
     ],
     "fan_min_speed": [
-        "0"
+        "10"
+    ],
+    "fan_cooling_layer_time": [
+        "38"
+    ],
+    "slow_down_min_print_speed": [
+        "10"
+    ],
+    "fan_below_layer_time": [
+        "15"
+    ],
+    "bridge_fan_speed": [
+        "25"
     ],
     "fan_cooling_mode": [
         "0"
@@ -32,12 +50,15 @@
     "filament_extruder_variant": [
         "Direct Drive Standard"
     ],
+    "filament_max_volumetric_speed": [
+        "17"
+    ],
     "from": "User",
     "hot_plate_temp": [
-        "100"
+        "0"
     ],
     "hot_plate_temp_initial_layer": [
-        "100"
+        "0"
     ],
     "inherits": "Overture ABS @Qidi Q2 0.4 nozzle",
     "nozzle_temperature": [
@@ -45,6 +66,12 @@
     ],
     "nozzle_temperature_initial_layer": [
         "260"
+    ],
+    "overhang_fan_speed": [
+        "100"
+    ],
+    "overhang_fan_threshold": [
+        "95%"
     ],
     "version": "2.4.0.70"
 }

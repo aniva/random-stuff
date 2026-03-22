@@ -55,6 +55,8 @@ A valid filament profile requires a slightly different header:
 
 ### 3. The Identification Rule
 * **Rule 5 (The VSCode Suffix):** To instantly identify AI-generated profiles and prevent conflicts, the file name and all internal ID strings (`name`, `setting_id`, and `print_settings_id` or `filament_settings_id`) MUST ALWAYS end with the exact suffix ` (vscode) @Q2`.
+* **Rule 6 (Density Formatting):** Any process variable defining density (such as `sparse_infill_density` or `skin_infill_density`) MUST include the percentage sign within the string (e.g., `"20%"`). 
+* **Rule 7 (Active Chamber Heating):** The QIDI Q2 has an active chamber heater. For any high-temperature, warp-prone filament (ABS, ASA, PC, PA), agents MUST leverage this by adding `"chamber_temperatures": ["60"]` to the filament JSON.
 
 ---
 
