@@ -17,5 +17,17 @@
     ],
     "inherits": "Overture PLA @Qidi Q2 0.4 nozzle",
     "name": "Overture PLA Std @Qidi Q2 0.4 nozzle 60 bed",
+    "nozzle_temperature": [
+        "220"
+    ],
+    "fan_min_speed": [
+        "100"
+    ],
+    "supertack_plate_temp": [
+        "60"
+    ],
+    "supertack_plate_temp_initial_layer": [
+        "60"
+    ],
     "version": "2.4.0.70"
 }

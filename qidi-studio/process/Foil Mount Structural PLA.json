@@ -1,0 +1,15 @@
+{
+    "type": "process",
+    "name": "Foil Mount Structural PLA",
+    "print_settings_id": "Foil Mount Structural PLA",
+    "from": "User",
+    "inherits": "0.20mm Standard @Q2",
+    "is_custom_defined": "0",
+    "version": "1.9.0.0",
+    "setting_id": "Foil Mount Structural PLA",
+    "wall_loops": "6",
+    "top_shell_layers": "6",
+    "bottom_shell_layers": "6",
+    "sparse_infill_density": "60%",
+    "sparse_infill_pattern": "gyroid"
+}
