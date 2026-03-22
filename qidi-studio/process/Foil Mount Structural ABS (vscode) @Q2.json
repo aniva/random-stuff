@@ -1,14 +1,21 @@
 {
     "bottom_shell_layers": "4",
-    "bridge_speed": "25",
+    "bridge_speed": [
+        "25"
+    ],
     "enable_support": "1",
-    "elephant_foot_compensation": "0.15",
     "from": "User",
     "inherits": "0.20mm Standard @Q2",
-    "inner_wall_speed": "60",
-    "internal_solid_infill_speed": "60",
+    "inner_wall_speed": [
+        "50"
+    ],
+    "internal_solid_infill_speed": [
+        "50"
+    ],
     "name": "Foil Mount Structural ABS (vscode) @Q2",
-    "outer_wall_speed": "60",
+    "outer_wall_speed": [
+        "50"
+    ],
     "print_extruder_id": [
         "1"
     ],
@@ -17,8 +24,9 @@
     ],
     "print_settings_id": "Foil Mount Structural ABS (vscode) @Q2",
     "sparse_infill_density": "20%",
-    "sparse_infill_pattern": "grid",
-    "support_interface_speed": "40",
+    "support_interface_speed": [
+        "40"
+    ],
     "support_style": "tree_slim",
     "top_shell_layers": "4",
     "version": "1.9.0.0",
