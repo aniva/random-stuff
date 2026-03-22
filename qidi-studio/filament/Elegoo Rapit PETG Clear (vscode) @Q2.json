@@ -54,7 +54,7 @@
         "35"
     ],
     "filament_settings_id": [
-        "Elegoo Rapit PETG Clear (vscode) @Qidi Q2 0.4 nozzle"
+        "Elegoo Rapit PETG Clear (vscode) @Q2"
     ],
     "filament_wipe": [
         "1"
@@ -75,8 +75,8 @@
     "hot_plate_temp_initial_layer": [
         "80"
     ],
-    "inherits": "Generic PETG @Qidi Q2 0.4 nozzle",
-    "name": "Elegoo Rapit PETG Clear (vscode) @Qidi Q2 0.4 nozzle",
+    "inherits": "Generic PETG @Q2",
+    "name": "Elegoo Rapit PETG Clear (vscode) @Q2",
     "nozzle_temperature": [
         "255"
     ],
