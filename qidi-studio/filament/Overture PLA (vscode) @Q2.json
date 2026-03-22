@@ -1,0 +1,44 @@
+{
+    "type": "filament",
+    "name": "Overture PLA (vscode) @Q2",
+    "setting_id": "Overture PLA (vscode) @Q2",
+    "filament_settings_id": [
+        "Overture PLA (vscode) @Q2"
+    ],
+    "from": "User",
+    "inherits": "Overture PLA @Qidi Q2 0.4 nozzle",
+    "version": "2.4.0.70",
+    "filament_extruder_variant": [
+        "Direct Drive Standard"
+    ],
+    "filament_max_volumetric_speed": [
+        "18"
+    ],
+    "nozzle_temperature": [
+        "220"
+    ],
+    "nozzle_temperature_initial_layer": [
+        "220"
+    ],
+    "cool_plate_temp": [
+        "60"
+    ],
+    "cool_plate_temp_initial_layer": [
+        "60"
+    ],
+    "hot_plate_temp": [
+        "0"
+    ],
+    "hot_plate_temp_initial_layer": [
+        "0"
+    ],
+    "supertack_plate_temp": [
+        "0"
+    ],
+    "supertack_plate_temp_initial_layer": [
+        "0"
+    ],
+    "fan_min_speed": [
+        "100"
+    ]
+}
