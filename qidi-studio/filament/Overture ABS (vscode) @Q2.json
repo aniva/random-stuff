@@ -6,10 +6,10 @@
     "setting_id": "Overture ABS (vscode) @Q2",
     "name": "Overture ABS (vscode) @Q2",
     "cool_plate_temp": [
-        "90"
+        "0"
     ],
     "cool_plate_temp_initial_layer": [
-        "90"
+        "0"
     ],
     "default_filament_colour": [
         "#000000"

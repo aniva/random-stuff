@@ -20,7 +20,7 @@ For QIDI Studio to successfully recognize and load a new profile, the JSON file 
 ### 1. Mandatory Process Attributes
 A valid process profile must have these exact keys at the root level:
 
-'''json
+```json
 {
   "type": "process",
   "name": "PC Case Structural ABS (vscode) @Q2", 
@@ -31,14 +31,14 @@ A valid process profile must have these exact keys at the root level:
   "version": "1.9.0.0",
   "setting_id": "PC Case Structural ABS (vscode) @Q2"
 }
-'''
+```
 * **Rule 1:** `name`, `print_settings_id`, and `setting_id` **MUST** exactly match the filename (minus the `.json` extension).
 * **Rule 2:** `inherits` **MUST** be an exact string match to an existing system process profile (e.g., do not write `@Qidi Q2` if the system profile is `@Q2`).
 
 ### 2. Mandatory Filament Attributes
 A valid filament profile requires a slightly different header:
 
-'''json
+```json
 {
   "type": "filament",
   "name": "Overture ABS white (vscode) @Q2",
@@ -49,7 +49,7 @@ A valid filament profile requires a slightly different header:
   "is_custom_defined": "0",
   "version": "1.9.0.0"
 }
-'''
+```
 * **Rule 3 (The Array Rule):** Almost ALL configuration values inside a `filament` JSON file **MUST** be formatted as arrays of strings. (e.g., `"nozzle_temperature": ["260"]`). 
 * **Rule 4:** Process values, conversely, are standard strings (e.g., `"wall_loops": "4"`).
 
@@ -108,29 +108,45 @@ For a machine-readable format mapping what the UI dropdown menus allow:
 * **How to Read:** Search for the attribute name. Look for an `"enum_values"` or `"options"` array, which lists exactly what the software expects (e.g., `["nearest", "aligned", "back", "random"]`).
 
 ---
+## Build Plate Mapping
+Specific physical build plates are used for different material families. When an agent creates or modifies a filament profile, it MUST assign the target temperature to the correct plate JSON attribute.
+
+* **ABS / ASA:** Printed on the **Qidi Q2 Engineering Smooth PEI plate**.
+  * JSON Attributes to set: `eng_plate_temp` and `eng_plate_temp_initial_layer`
+* **PLA / PETG:** Printed on the **Qidi Cool Plate Pro**.
+  * JSON Attributes to set: `cool_plate_temp` and `cool_plate_temp_initial_layer`
+* **General / Fallback:** Stock textured PEI plate.
+  * JSON Attributes to set: `hot_plate_temp` and `hot_plate_temp_initial_layer`
+
+```json
+"eng_plate_temp": ["100"],
+"eng_plate_temp_initial_layer": ["100"],
+"cool_plate_temp": ["0"],
+"cool_plate_temp_initial_layer": ["0"]
+```
 
 ## Example Overrides
 
 ### 1. Structural ABS (For Process JSON)
 Used for large, warp-prone structural parts like PC cases.
-'''json
+```json
 "wall_loops": "4",
 "top_shell_layers": "5",
 "bottom_shell_layers": "5",
 "sparse_infill_density": "40",
 "sparse_infill_pattern": "cubic"
-'''
+```
 
 ### 2. Clear "Glass" PETG (For Filament JSON)
 Used for optical transparency (requires 0% fan and slow speeds).
-'''json
+```json
 "nozzle_temperature": ["255"],
 "nozzle_temperature_initial_layer": ["255"],
 "fan_min_speed": ["0"],
 "fan_max_speed": ["20"],
 "fan_cooling_mode": ["0"],
 "nozzle_flow_ratio": ["1.05"]
-'''
+```
 
 ---
 *Author: Aniva*
