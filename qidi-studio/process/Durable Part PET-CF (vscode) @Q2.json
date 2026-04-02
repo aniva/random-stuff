@@ -1,0 +1,22 @@
+{
+    "type": "process",
+    "name": "Durable Part PET-CF (vscode) @Q2",
+    "print_settings_id": "Durable Part PET-CF (vscode) @Q2",
+    "setting_id": "Durable Part PET-CF (vscode) @Q2",
+    "inherits": "0.20mm Standard @Q2",
+    "from": "User",
+    "is_custom_defined": "0",
+    "version": "1.9.0.0",
+    "wall_loops": "6",
+    "top_shell_layers": "5",
+    "bottom_shell_layers": "5",
+    "sparse_infill_density": "50%",
+    "sparse_infill_pattern": "cubic",
+    "outer_wall_speed": "40",
+    "inner_wall_speed": "60",
+    "internal_solid_infill_speed": "60",
+    "bridge_speed": "25",
+    "elephant_foot_compensation": "0.15",
+    "enable_support": "1",
+    "support_style": "tree_slim"
+}
