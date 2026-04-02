@@ -79,7 +79,7 @@
     "hot_plate_temp_initial_layer": [
         "80"
     ],
-    "inherits": "Generic PETG @Q2",
+    "inherits": "Generic PETG @Qidi Q2 0.4 nozzle",
     "is_custom_defined": "0",
     "name": "Elegoo Rapit PETG Clear (vscode) @Q2",
     "setting_id": "Elegoo Rapit PETG Clear (vscode) @Q2",
