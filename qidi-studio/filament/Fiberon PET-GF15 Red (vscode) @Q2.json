@@ -5,24 +5,27 @@
     "filament_settings_id": [
         "Fiberon PET-GF15 Red (vscode) @Q2"
     ],
-    "from": "User",
     "inherits": "Generic PETG",
-    "is_custom_defined": "0",
-    "version": "1.9.0.0",
     "default_filament_colour": [
         "#FF0000"
     ],
     "nozzle_temperature": [
-        "300"
+        "295"
     ],
     "nozzle_temperature_initial_layer": [
-        "300"
+        "295"
+    ],
+    "textured_plate_temp": [
+        "75"
+    ],
+    "textured_plate_temp_initial_layer": [
+        "75"
     ],
     "hot_plate_temp": [
-        "80"
+        "0"
     ],
     "hot_plate_temp_initial_layer": [
-        "80"
+        "0"
     ],
     "eng_plate_temp": [
         "0"
@@ -35,11 +38,5 @@
     ],
     "cool_plate_temp_initial_layer": [
         "0"
-    ],
-    "fan_min_speed": [
-        "10"
-    ],
-    "fan_max_speed": [
-        "30"
     ]
 }

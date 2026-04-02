@@ -1,27 +1,6 @@
 {
-    "type": "filament",
-    "name": "Overture ASA (vscode) @Q2",
-    "setting_id": "Overture ASA (vscode) @Q2",
-    "filament_settings_id": [
-        "Overture ASA (vscode) @Q2"
-    ],
-    "from": "User",
-    "inherits": "QIDI ASA @Qidi Q2 0.4 nozzle",
-    "version": "2.4.0.70",
     "default_filament_colour": [
         "#FFFFFF"
-    ],
-    "filament_extruder_variant": [
-        "Direct Drive Standard"
-    ],
-    "filament_vendor": [
-        "Generic"
-    ],
-    "nozzle_temperature": [
-        "260"
-    ],
-    "nozzle_temperature_initial_layer": [
-        "260"
     ],
     "eng_plate_temp": [
         "95"
@@ -29,19 +8,35 @@
     "eng_plate_temp_initial_layer": [
         "95"
     ],
-    "hot_plate_temp": [
-        "0"
-    ],
-    "hot_plate_temp_initial_layer": [
+    "fan_max_speed": [
         "0"
     ],
     "fan_min_speed": [
         "0"
     ],
-    "fan_max_speed": [
-        "0"
+    "filament_extruder_variant": [
+        "Direct Drive Standard"
     ],
-    "fan_cooling_mode": [
-        "0"
-    ]
+    "filament_settings_id": [
+        "Overture ASA (vscode) @Q2"
+    ],
+    "filament_vendor": [
+        "Generic"
+    ],
+    "from": "User",
+    "hot_plate_temp": [
+        "95"
+    ],
+    "hot_plate_temp_initial_layer": [
+        "95"
+    ],
+    "inherits": "QIDI ASA @Qidi Q2 0.4 nozzle",
+    "name": "Overture ASA (vscode) @Q2",
+    "nozzle_temperature": [
+        "260"
+    ],
+    "nozzle_temperature_initial_layer": [
+        "260"
+    ],
+    "version": "2.4.0.70"
 }
