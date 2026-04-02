@@ -5,7 +5,10 @@
     "filament_settings_id": [
         "Fiberon PET-GF15 Red (vscode) @Q2"
     ],
-    "inherits": "Generic PETG",
+    "from": "User",
+    "is_custom_defined": "0",
+    "version": "1.9.0.0",
+    "inherits": "Generic PETG @Qidi Q2 0.4 nozzle",
     "default_filament_colour": [
         "#FF0000"
     ],
