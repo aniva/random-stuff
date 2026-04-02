@@ -1,5 +1,8 @@
 {
     "type": "filament",
+    "filament_type": [
+        "PET-CF"
+    ],
     "name": "Fiberon PET-GF15 Red (vscode) @Q2",
     "setting_id": "Fiberon PET-GF15 Red (vscode) @Q2",
     "filament_settings_id": [
