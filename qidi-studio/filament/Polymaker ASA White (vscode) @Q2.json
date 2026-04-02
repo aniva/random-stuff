@@ -1,5 +1,8 @@
 {
     "type": "filament",
+    "filament_type": [
+        "ASA"
+    ],
     "name": "Polymaker ASA White (vscode) @Q2",
     "setting_id": "Polymaker ASA White (vscode) @Q2",
     "filament_settings_id": [
@@ -18,17 +21,20 @@
     "nozzle_temperature_initial_layer": [
         "260"
     ],
+    "chamber_temperatures": [
+        "60"
+    ],
     "eng_plate_temp": [
-        "95"
+        "0"
     ],
     "eng_plate_temp_initial_layer": [
-        "95"
+        "0"
     ],
     "hot_plate_temp": [
-        "0"
+        "95"
     ],
     "hot_plate_temp_initial_layer": [
-        "0"
+        "95"
     ],
     "cool_plate_temp": [
         "0"
@@ -40,6 +46,18 @@
         "0"
     ],
     "fan_max_speed": [
+        "0"
+    ],
+    "supertack_plate_temp": [
+        "0"
+    ],
+    "supertack_plate_temp_initial_layer": [
+        "0"
+    ],
+    "textured_plate_temp": [
+        "0"
+    ],
+    "textured_plate_temp_initial_layer": [
         "0"
     ],
     "fan_cooling_mode": [

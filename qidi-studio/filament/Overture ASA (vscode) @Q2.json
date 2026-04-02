@@ -1,12 +1,20 @@
 {
+    "type": "filament",
+    "filament_type": [
+        "ASA"
+    ],
+    "setting_id": "Overture ASA (vscode) @Q2",
+    "chamber_temperatures": [
+        "60"
+    ],
     "default_filament_colour": [
         "#FFFFFF"
     ],
     "eng_plate_temp": [
-        "95"
+        "0"
     ],
     "eng_plate_temp_initial_layer": [
-        "95"
+        "0"
     ],
     "fan_max_speed": [
         "0"
@@ -24,6 +32,7 @@
         "Generic"
     ],
     "from": "User",
+    "is_custom_defined": "0",
     "hot_plate_temp": [
         "95"
     ],
@@ -38,5 +47,23 @@
     "nozzle_temperature_initial_layer": [
         "260"
     ],
-    "version": "2.4.0.70"
+    "cool_plate_temp": [
+        "0"
+    ],
+    "cool_plate_temp_initial_layer": [
+        "0"
+    ],
+    "supertack_plate_temp": [
+        "0"
+    ],
+    "supertack_plate_temp_initial_layer": [
+        "0"
+    ],
+    "textured_plate_temp": [
+        "0"
+    ],
+    "textured_plate_temp_initial_layer": [
+        "0"
+    ],
+    "version": "1.9.0.0"
 }

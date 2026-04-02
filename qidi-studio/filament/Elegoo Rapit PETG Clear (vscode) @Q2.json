@@ -1,4 +1,8 @@
 {
+    "type": "filament",
+    "filament_type": [
+        "PETG"
+    ],
     "activate_air_filtration": [
         "0"
     ],
@@ -76,7 +80,9 @@
         "80"
     ],
     "inherits": "Generic PETG @Q2",
+    "is_custom_defined": "0",
     "name": "Elegoo Rapit PETG Clear (vscode) @Q2",
+    "setting_id": "Elegoo Rapit PETG Clear (vscode) @Q2",
     "nozzle_temperature": [
         "255"
     ],
@@ -87,11 +93,16 @@
         "0"
     ],
     "supertack_plate_temp": [
-        "80"
+        "0"
     ],
     "supertack_plate_temp_initial_layer": [
+        "0"
+    ],
+    "textured_plate_temp": [
         "80"
     ],
-    "type": "filament",
-    "version": "2.4.1.11"
+    "textured_plate_temp_initial_layer": [
+        "80"
+    ],
+    "version": "1.9.0.0"
 }

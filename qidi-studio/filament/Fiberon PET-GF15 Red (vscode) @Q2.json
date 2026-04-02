@@ -1,7 +1,7 @@
 {
     "type": "filament",
     "filament_type": [
-        "PET-CF"
+        "PET-GF"
     ],
     "name": "Fiberon PET-GF15 Red (vscode) @Q2",
     "setting_id": "Fiberon PET-GF15 Red (vscode) @Q2",
@@ -43,6 +43,12 @@
         "0"
     ],
     "cool_plate_temp_initial_layer": [
+        "0"
+    ],
+    "supertack_plate_temp": [
+        "0"
+    ],
+    "supertack_plate_temp_initial_layer": [
         "0"
     ]
 }

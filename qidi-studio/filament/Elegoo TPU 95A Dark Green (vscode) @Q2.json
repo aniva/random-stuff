@@ -1,5 +1,8 @@
 {
     "type": "filament",
+    "filament_type": [
+        "TPU"
+    ],
     "name": "Elegoo TPU 95A Dark Green (vscode) @Q2",
     "setting_id": "Elegoo TPU 95A Dark Green (vscode) @Q2",
     "filament_settings_id": [
@@ -19,10 +22,10 @@
         "220"
     ],
     "hot_plate_temp": [
-        "50"
+        "0"
     ],
     "hot_plate_temp_initial_layer": [
-        "50"
+        "0"
     ],
     "eng_plate_temp": [
         "0"
@@ -38,5 +41,17 @@
     ],
     "filament_max_volumetric_speed": [
         "3.0"
+    ],
+    "textured_plate_temp": [
+        "50"
+    ],
+    "textured_plate_temp_initial_layer": [
+        "50"
+    ],
+    "supertack_plate_temp": [
+        "0"
+    ],
+    "supertack_plate_temp_initial_layer": [
+        "0"
     ]
 }
