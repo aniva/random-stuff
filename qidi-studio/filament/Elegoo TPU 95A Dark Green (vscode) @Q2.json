@@ -9,7 +9,7 @@
         "Elegoo TPU 95A Dark Green (vscode) @Q2"
     ],
     "from": "User",
-    "inherits": "Generic TPU @Qidi Q2 0.4 nozzle",
+    "inherits": "Generic TPU 95A @Qidi Q2 0.4 nozzle",
     "is_custom_defined": "0",
     "version": "1.9.0.0",
     "default_filament_colour": [
