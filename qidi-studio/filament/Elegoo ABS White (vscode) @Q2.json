@@ -1,0 +1,57 @@
+{
+    "type": "filament",
+    "filament_type": [
+        "ABS"
+    ],
+    "name": "Elegoo ABS White (vscode) @Q2",
+    "setting_id": "Elegoo ABS White (vscode) @Q2",
+    "filament_settings_id": [
+        "Elegoo ABS White (vscode) @Q2"
+    ],
+    "from": "User",
+    "is_custom_defined": "0",
+    "version": "1.9.0.0",
+    "inherits": "Generic ABS @Qidi Q2 0.4 nozzle",
+    "default_filament_colour": [
+        "#FFFFFF"
+    ],
+    "nozzle_temperature": [
+        "260"
+    ],
+    "nozzle_temperature_initial_layer": [
+        "260"
+    ],
+    "chamber_temperatures": [
+        "60"
+    ],
+    "hot_plate_temp": [
+        "95"
+    ],
+    "hot_plate_temp_initial_layer": [
+        "95"
+    ],
+    "cool_plate_temp": [
+        "0"
+    ],
+    "cool_plate_temp_initial_layer": [
+        "0"
+    ],
+    "eng_plate_temp": [
+        "0"
+    ],
+    "eng_plate_temp_initial_layer": [
+        "0"
+    ],
+    "textured_plate_temp": [
+        "0"
+    ],
+    "textured_plate_temp_initial_layer": [
+        "0"
+    ],
+    "supertack_plate_temp": [
+        "0"
+    ],
+    "supertack_plate_temp_initial_layer": [
+        "0"
+    ]
+}
