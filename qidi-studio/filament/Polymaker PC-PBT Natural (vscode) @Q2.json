@@ -1,0 +1,66 @@
+{
+    "type": "filament",
+    "filament_type": [
+        "PC"
+    ],
+    "name": "Polymaker PC-PBT Natural (vscode) @Q2",
+    "setting_id": "Polymaker PC-PBT Natural (vscode) @Q2",
+    "filament_settings_id": [
+        "Polymaker PC-PBT Natural (vscode) @Q2"
+    ],
+    "from": "User",
+    "is_custom_defined": "0",
+    "version": "1.9.0.0",
+    "inherits": "Generic PC @Qidi Q2 0.4 nozzle",
+    "default_filament_colour": [
+        "#EADDCD"
+    ],
+    "nozzle_temperature": [
+        "270"
+    ],
+    "nozzle_temperature_initial_layer": [
+        "270"
+    ],
+    "chamber_temperatures": [
+        "60"
+    ],
+    "hot_plate_temp": [
+        "0"
+    ],
+    "hot_plate_temp_initial_layer": [
+        "0"
+    ],
+    "cool_plate_temp": [
+        "0"
+    ],
+    "cool_plate_temp_initial_layer": [
+        "0"
+    ],
+    "eng_plate_temp": [
+        "0"
+    ],
+    "eng_plate_temp_initial_layer": [
+        "0"
+    ],
+    "textured_plate_temp": [
+        "110"
+    ],
+    "textured_plate_temp_initial_layer": [
+        "110"
+    ],
+    "supertack_plate_temp": [
+        "0"
+    ],
+    "supertack_plate_temp_initial_layer": [
+        "0"
+    ],
+    "fan_min_speed": [
+        "0"
+    ],
+    "fan_max_speed": [
+        "0"
+    ],
+    "fan_cooling_mode": [
+        "0"
+    ]
+}
