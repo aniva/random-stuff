@@ -1,5 +1,7 @@
 {
     "bottom_shell_layers": "5",
+    "brim_type": "outer_only",
+    "brim_width": "10",
     "filename_format": "{input_filename_base}_{filament_type[0]}_{print_time}.gcode",
     "from": "User",
     "inherits": "0.20mm Standard @Q2",
