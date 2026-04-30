@@ -1,0 +1,57 @@
+{
+    "type": "filament",
+    "filament_type": [
+        "PETG"
+    ],
+    "name": "CCTREE PETG White (vscode) @Q2",
+    "setting_id": "CCTREE PETG White (vscode) @Q2",
+    "filament_settings_id": [
+        "CCTREE PETG White (vscode) @Q2"
+    ],
+    "from": "User",
+    "is_custom_defined": "0",
+    "version": "1.9.0.0",
+    "inherits": "Generic PETG @Qidi Q2 0.4 nozzle",
+    "default_filament_colour": [
+        "#FFFFFF"
+    ],
+    "nozzle_temperature": [
+        "240"
+    ],
+    "nozzle_temperature_initial_layer": [
+        "245"
+    ],
+    "chamber_temperatures": [
+        "0"
+    ],
+    "textured_plate_temp": [
+        "80"
+    ],
+    "textured_plate_temp_initial_layer": [
+        "80"
+    ],
+    "hot_plate_temp": [
+        "0"
+    ],
+    "hot_plate_temp_initial_layer": [
+        "0"
+    ],
+    "cool_plate_temp": [
+        "0"
+    ],
+    "cool_plate_temp_initial_layer": [
+        "0"
+    ],
+    "eng_plate_temp": [
+        "0"
+    ],
+    "eng_plate_temp_initial_layer": [
+        "0"
+    ],
+    "supertack_plate_temp": [
+        "0"
+    ],
+    "supertack_plate_temp_initial_layer": [
+        "0"
+    ]
+}
