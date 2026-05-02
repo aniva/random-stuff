@@ -26,7 +26,7 @@ Migration of hardware from an A01 Aluminum Mini-ITX chassis to a custom ~9L SFF 
 | **GPU** | NVIDIA GeForce GTX 1650 SUPER (ASUS ROG STRIX 4G) |
 | **GPU Riser** | LINKUP AVA5 PCIE 5.0 Double Reverse (21cm total length) |
 | **Power Supply** | FSP Dagger Pro 850W SFX 3.1 |
-| **Telemetry Display** | Waveshare ESP32-C6 1.47inch Touch Display (172×320, WiFi 6 & BT) |
+| **Telemetry Display** | Waveshare ESP32-C6 1.47inch Touch Display (172×320, v0.2 Hardware Revision) |
 
 ### 3.1. Hardware Acceleration Pipeline (Insta360 Studio)
 * **Primary Graphics Adapter (UEFI):** `[PCIE1]`. Forces 120Hz display output and NVENC hardware encoding via the discrete NVIDIA GPU.
@@ -38,43 +38,140 @@ Migration of hardware from an A01 Aluminum Mini-ITX chassis to a custom ~9L SFF 
 * [ ] **GPU Upgrade Execution:** Procure a sub-252mm NVIDIA GPU optimized for Insta360 Studio and native 120Hz display output via HDMI 2.1 (~$300 CAD secondary market). Options: RTX 4060 8GB or RTX 3060 12GB.
 
 ## 5. Telemetry & Hardware Monitoring Architecture
-* **Microcontroller:** Waveshare ESP32-C6 Development Board.
-* **Firmware Stack:** C++ compiled via PlatformIO (pioarduino v3.x core override). Utilizes `LovyanGFX` for hardware-native ST7789 display driving with a 34px X-axis offset memory correction. Configured with `ARDUINO_USB_CDC_ON_BOOT=1` to receive serial payload via COM3.
+* **Microcontroller:** Waveshare ESP32-C6 Development Board. Pinout mapped for hardware revision v0.2 (Backlight: GPIO 22, Data/Command: GPIO 15).
+* **Firmware Stack:** C++ compiled via PlatformIO. Utilizes `LovyanGFX` for hardware-native ST7789 display driving with a 34px X-axis offset memory correction. 
 
 ### 5.1. Host Infrastructure & Deployment
 * **Hardware Monitoring Engine:** LibreHardwareMonitor (LHM). 
     * Must be executed as Administrator.
     * WMI Server must be explicitly enabled via `Options -> Run WMI Server` to broadcast kernel-level thermals to the OS.
 * **Python Environment:** Global Windows Python 3.14 installation required. Executed via the `py` launcher. Dependencies: `pip install wmi pyserial`.
-* **Host Daemon:** Python script (`telemetry_stream.py`) querying the LHM WMI namespace. Extracts CPU Temp/Fan RPM and transmits formatted binary strings (`<T:XX,R:XXXX>`) to the ESP32-C6 over COM3 every 2.0s.
-* **Test Automation:** Local PowerShell wrapper (`test_payload.ps1`) constructed for rapid UI payload injection and bounding-box testing within the VS Code terminal.
+* **Host Daemon:** Python script (`telemetry_stream.py`) querying the LHM WMI namespace. Extracts CPU Temp/Fan RPM and transmits formatted binary strings (`<T:XX,R:XXXX>`) to the ESP32-C6 over the virtual USB CDC COM port every 2.0s.
 * **Startup Initialization:** VBScript wrapper (`launch_telemetry.vbs`) configured in Windows `shell:startup` to execute the Python daemon silently (`pythonw.exe`) in the background on user login.
 
-## 6. ESP32-C6 Nuclear Erase & Recovery Protocol
-Use these exact commands when the module is stuck in a boot loop (`invalid header: 0xffffffff`), missing the GUI "Erase Flash" button, or when residual software prevents hardware initialization.
+## 6. ESP32-C6 Display Recovery & Initialization Protocol
+Required execution path when the module is stuck in a Watchdog Timer (WDT) boot-loop, presents a blank LCD panel, or drops the native USB serial connection.
 
-### 6.1. Execution
-Run this command from the project root (`...\telemetry_display`) in **Windows PowerShell** to wipe the chip entirely:
-```bash
+### 6.1. Flash Memory Erase
+Delete the hidden `.pio` directory to clear corrupted compilation caches. Execute the following in PowerShell to format the chip.
+
+'''powershell
 & "$env:USERPROFILE\.platformio\penv\Scripts\python.exe" -m platformio run --target erase
-```
-*Note: If the command fails to connect, hold the **BOOT** button on the back of the module while plugging in the USB to force Download Mode.*
+'''
 
-### 6.2. Post-Erase Validation
-1. **Manual Cleanup:** Delete the `.pio` folder in the project root to clear corrupted library headers.
-2. **Silence Check:** Open the Serial Monitor. The successful erase leaves the chip empty, so absolutely no text should appear.
-3. **Hardware Test:** Upload a minimal `digitalWrite` test on GPIO 15 to verify backlight hardware before re-introducing LovyanGFX.
+### 6.2. Hardware Interrupt (Download Mode)
+If the microcontroller is actively crashing (erratic backlight flashing/strobe), software flashing will fail. The WDT boot-loop must be physically interrupted:
+1. Press and hold the physical **BOOT** button on the rear of the module.
+2. Short-press the physical **RST** button.
+3. Release the **BOOT** button.
+The device is now suspended in ROM Download Mode and is receptive to new firmware.
 
-```cpp
+### 6.3. PlatformIO Hardware Configuration (`platformio.ini`)
+The v0.2 hardware revision requires `dio` flash mode to prevent crashing, and explicit DTR/RTS assertion to wake up the internal USB CDC interface.
+
+'''ini
+[env:esp32-c6-devkitc-1]
+platform = espressif32
+board = esp32-c6-devkitc-1
+framework = arduino
+monitor_speed = 115200
+
+; Force safe flash mode to prevent hardware boot-loops
+board_build.flash_mode = dio
+
+; Wake up the Native USB CDC stream
+monitor_dtr = 1
+monitor_rts = 1
+
+build_flags = 
+    -D ARDUINO_USB_MODE=1
+    -D ARDUINO_USB_CDC_ON_BOOT=1
+
+lib_deps = 
+    lovyan03/LovyanGFX@^1.1.16
+'''
+
+### 6.4. Hardware Validation Firmware (`src/main.cpp`)
+Deploy this minimalist graphical test to verify SPI pin mappings and PWM backlight control prior to integrating serial payload ingestion.
+
+'''cpp
 #include <Arduino.h>
+#include <LovyanGFX.hpp>
+
+class LGFX : public lgfx::LGFX_Device {
+  lgfx::Panel_ST7789 _panel_instance;
+  lgfx::Bus_SPI _bus_instance;
+  lgfx::Light_PWM _light_instance;
+
+public:
+  LGFX(void) {
+    // 1. Configure SPI Bus
+    {
+      auto cfg = _bus_instance.config();
+      cfg.spi_host = SPI2_HOST;
+      cfg.spi_mode = 0;
+      cfg.freq_write = 40000000;
+      cfg.pin_sclk = 7;
+      cfg.pin_mosi = 6;
+      cfg.pin_miso = -1;
+      cfg.pin_dc = 15; // Validated v0.2 Data/Command pin
+      _bus_instance.config(cfg);
+      _panel_instance.setBus(&_bus_instance);
+    }
+    // 2. Configure Panel Parameters
+    {
+      auto cfg = _panel_instance.config();
+      cfg.pin_cs = 14;
+      cfg.pin_rst = 21;
+      cfg.pin_busy = -1;
+      cfg.panel_width = 172;
+      cfg.panel_height = 320;
+      cfg.offset_x = 34; // Hardware memory offset correction
+      cfg.offset_y = 0;
+      cfg.invert = true;
+      _panel_instance.config(cfg);
+    }
+    // 3. Configure Hardware Backlight
+    {
+      auto cfg = _light_instance.config();
+      cfg.pin_bl = 22; // Validated v0.2 Hardware Backlight Pin
+      cfg.invert = false;
+      cfg.freq = 44100;
+      cfg.pwm_channel = 7;
+      _light_instance.config(cfg);
+      _panel_instance.setLight(&_light_instance);
+    }
+    setPanel(&_panel_instance);
+  }
+};
+
+LGFX lcd;
+
 void setup() {
   Serial.begin(115200);
-  pinMode(15, OUTPUT);
+  
+  lcd.init();
+  lcd.setRotation(1); 
+  lcd.setBrightness(128); 
+  lcd.fillScreen(TFT_BLACK);
+  
+  lcd.setTextColor(TFT_GREEN, TFT_BLACK);
+  lcd.setTextSize(2);
+  lcd.setCursor(10, 10);
+  lcd.println("SYSTEM NOMINAL");
+  lcd.setTextColor(TFT_WHITE, TFT_BLACK);
+  lcd.println("Awaiting Python Daemon...");
+
+  Serial.println("Hardware initialized. SPI Bus active.");
 }
+
 void loop() {
-  digitalWrite(15, HIGH); 
-  delay(2000);
-  digitalWrite(15, LOW);
-  delay(2000);
+  delay(1000);
 }
-```
+'''
+
+### 6.5. Expected Boot Sequence & Validation
+1. **Compilation & Flash:** Terminal reports `[SUCCESS]`.
+2. **Execution:** Press the physical **RST** button to boot the new firmware.
+3. **USB Mount:** Windows emits the USB connection chime. The ESP32-C6 automatically creates a new Virtual USB Serial COM port.
+4. **Visual Output:** The 1.47" LCD activates and displays "SYSTEM NOMINAL" in green text, confirming exact alignment of the SPI and PWM pins.
