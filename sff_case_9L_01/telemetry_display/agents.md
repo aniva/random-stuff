@@ -49,3 +49,32 @@ Migration of hardware from an A01 Aluminum Mini-ITX chassis to a custom ~9L SFF 
 * **Host Daemon:** Python script (`telemetry_stream.py`) querying the LHM WMI namespace. Extracts CPU Temp/Fan RPM and transmits formatted binary strings (`<T:XX,R:XXXX>`) to the ESP32-C6 over COM3 every 2.0s.
 * **Test Automation:** Local PowerShell wrapper (`test_payload.ps1`) constructed for rapid UI payload injection and bounding-box testing within the VS Code terminal.
 * **Startup Initialization:** VBScript wrapper (`launch_telemetry.vbs`) configured in Windows `shell:startup` to execute the Python daemon silently (`pythonw.exe`) in the background on user login.
+
+## 6. ESP32-C6 Nuclear Erase & Recovery Protocol
+Use these exact commands when the module is stuck in a boot loop (`invalid header: 0xffffffff`), missing the GUI "Erase Flash" button, or when residual software prevents hardware initialization.
+
+### 6.1. Execution
+Run this command from the project root (`...\telemetry_display`) in **Windows PowerShell** to wipe the chip entirely:
+```bash
+& "$env:USERPROFILE\.platformio\penv\Scripts\python.exe" -m platformio run --target erase
+```
+*Note: If the command fails to connect, hold the **BOOT** button on the back of the module while plugging in the USB to force Download Mode.*
+
+### 6.2. Post-Erase Validation
+1. **Manual Cleanup:** Delete the `.pio` folder in the project root to clear corrupted library headers.
+2. **Silence Check:** Open the Serial Monitor. The successful erase leaves the chip empty, so absolutely no text should appear.
+3. **Hardware Test:** Upload a minimal `digitalWrite` test on GPIO 15 to verify backlight hardware before re-introducing LovyanGFX.
+
+```cpp
+#include <Arduino.h>
+void setup() {
+  Serial.begin(115200);
+  pinMode(15, OUTPUT);
+}
+void loop() {
+  digitalWrite(15, HIGH); 
+  delay(2000);
+  digitalWrite(15, LOW);
+  delay(2000);
+}
+```
