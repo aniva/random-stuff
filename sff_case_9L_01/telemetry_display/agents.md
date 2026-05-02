@@ -35,10 +35,17 @@ Migration of hardware from an A01 Aluminum Mini-ITX chassis to a custom ~9L SFF 
 ## 4. Pending Actions
 * [ ] **Physical CPU Migration:** Execute swap to Intel Core i5-14400. Strict adjustment of PL1/PL2 power limits required in UEFI to prevent thermal throttling against the Noctua NH-L9i-17xx.
 * [ ] **Front Panel Fabrication:** Measure exact physical tolerances of the Waveshare ESP32-C6 PCB and Type-C port using digital calipers. Execute Shapr3D cuts for flush mount.
-* [ ] **Telemetry Firmware Initialization:** Compile `main.cpp` serial parsing logic for the ESP32-C6 via PlatformIO (routed through native USB CDC on COM3). 
 * [ ] **GPU Upgrade Execution:** Procure a sub-252mm NVIDIA GPU optimized for Insta360 Studio and native 120Hz display output via HDMI 2.1 (~$300 CAD secondary market). Options: RTX 4060 8GB or RTX 3060 12GB.
 
 ## 5. Telemetry & Hardware Monitoring Architecture
 * **Microcontroller:** Waveshare ESP32-C6 Development Board.
-* **Firmware (Device):** C++ compiled via PlatformIO (Arduino framework). Configured with `ARDUINO_USB_CDC_ON_BOOT=1` to receive serial payload via COM3.
-* **Host Daemon (Windows):** Python script extracting CPU Temp/Fan RPM via WMI/OpenHardwareMonitor, transmitting formatted payload strings (e.g., `<T:55,R:2100>`) to the internal USB header.
+* **Firmware Stack:** C++ compiled via PlatformIO (pioarduino v3.x core override). Utilizes `LovyanGFX` for hardware-native ST7789 display driving with a 34px X-axis offset memory correction. Configured with `ARDUINO_USB_CDC_ON_BOOT=1` to receive serial payload via COM3.
+
+### 5.1. Host Infrastructure & Deployment
+* **Hardware Monitoring Engine:** LibreHardwareMonitor (LHM). 
+    * Must be executed as Administrator.
+    * WMI Server must be explicitly enabled via `Options -> Run WMI Server` to broadcast kernel-level thermals to the OS.
+* **Python Environment:** Global Windows Python 3.14 installation required. Executed via the `py` launcher. Dependencies: `pip install wmi pyserial`.
+* **Host Daemon:** Python script (`telemetry_stream.py`) querying the LHM WMI namespace. Extracts CPU Temp/Fan RPM and transmits formatted binary strings (`<T:XX,R:XXXX>`) to the ESP32-C6 over COM3 every 2.0s.
+* **Test Automation:** Local PowerShell wrapper (`test_payload.ps1`) constructed for rapid UI payload injection and bounding-box testing within the VS Code terminal.
+* **Startup Initialization:** VBScript wrapper (`launch_telemetry.vbs`) configured in Windows `shell:startup` to execute the Python daemon silently (`pythonw.exe`) in the background on user login.
