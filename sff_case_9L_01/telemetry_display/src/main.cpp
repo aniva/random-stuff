@@ -50,6 +50,11 @@ public:
 };
 
 LGFX lcd;
+String inputString = "";
+boolean stringComplete = false;
+int currentTemp = 0;
+int currentRPM = 0;
+boolean firstPayloadReceived = false; // New flag
 
 void setup() {
   Serial.begin(115200);
@@ -72,6 +77,51 @@ void setup() {
 }
 
 void loop() {
-  // Placeholder for serial payload ingestion logic
-  delay(1000);
+  // 1. Ingest Serial Stream
+  while (Serial.available()) {
+    char inChar = (char)Serial.read();
+    inputString += inChar;
+    // Look for the termination character of our payload
+    if (inChar == '>') {
+      stringComplete = true;
+    }
+  }
+
+  // 2. Parse Payload & Render
+  if (stringComplete) {
+    // Validate payload envelope
+    if (inputString.startsWith("<") && inputString.indexOf(">") > 0) {
+      
+      int tIndex = inputString.indexOf("T:");
+      int rIndex = inputString.indexOf("R:");
+      int commaIndex = inputString.indexOf(",");
+      int closeIndex = inputString.indexOf(">");
+
+      if (tIndex != -1 && rIndex != -1) {
+        // Extract substring values
+        String tempStr = inputString.substring(tIndex + 2, commaIndex);
+        String rpmStr = inputString.substring(rIndex + 2, closeIndex);
+        
+        currentTemp = tempStr.toInt();
+        currentRPM = rpmStr.toInt();
+
+        // Render Data (Using text background coloring to prevent screen flicker)
+        lcd.setTextSize(3);
+        
+        // Temperature Block
+        lcd.setCursor(10, 80);
+        lcd.setTextColor(TFT_ORANGE, TFT_BLACK); 
+        lcd.printf("CPU: %02d C  ", currentTemp);
+
+        // Fan RPM Block
+        lcd.setCursor(10, 130);
+        lcd.setTextColor(TFT_CYAN, TFT_BLACK);
+        lcd.printf("FAN: %04d RPM  ", currentRPM);
+      }
+    }
+    
+    // 3. Reset Buffer
+    inputString = "";
+    stringComplete = false;
+  }
 }

@@ -1,105 +1,80 @@
-import time
-import serial
-import wmi
 import urllib.request
 import json
+import serial
+import time
+import sys
 
-def get_web_telemetry():
-    try:
-        req = urllib.request.urlopen("http://localhost:8085/data.json", timeout=1)
-        data = json.loads(req.read())
+# --- Configuration ---
+COM_PORT = 'COM3'
+BAUD_RATE = 115200
+POLL_RATE_SEC = 2.0
+LHM_URL = "http://localhost:8085/data.json"
+
+def find_sensors(node, metrics):
+    """Recursively traverse the LHM JSON tree to extract values."""
+    if "Text" in node and "Value" in node:
+        text = node["Text"]
+        value = node["Value"]
+
+        # 1. Match CPU Package Temperature
+        if "CPU Package" in text and "°C" in value:
+            try:
+                # Isolate the float, convert to int, pad to 2 digits
+                num = float(value.replace(",", ".").split()[0])
+                metrics['temp'] = f"{int(num):02d}"
+            except ValueError: pass
         
-        cpu_temp = 0
-        fan_rpm = 0
-        
-        def search_node(node):
-            nonlocal cpu_temp, fan_rpm
-            text = node.get("Text", "")
-            val = node.get("Value", "")
-            
-            if ("CPU Package" in text or "CPU Core" in text) and "°C" in val:
-                try:
-                    cpu_temp = int(float(val.replace(" °C", "").replace("°C", "").replace(",", ".").strip()))
-                except ValueError:
-                    pass
-            elif ("Fan #1" in text or "CPU Fan" in text) and "RPM" in val:
-                try:
-                    fan_rpm = int(float(val.replace(" RPM", "").replace("RPM", "").replace(",", ".").strip()))
-                except ValueError:
-                    pass
-                    
-            for child in node.get("Children", []):
-                search_node(child)
-        
-        search_node(data)
-        return cpu_temp, fan_rpm
-    except Exception:
-        return None, None
+        # 2. Match Fan RPM
+        elif "Fan" in text and "RPM" in value:
+            try:
+                # Isolate the integer, capture the first non-zero fan found
+                num = int(value.replace(",", "").split()[0])
+                if num > 0 and metrics['rpm'] == "0000":
+                    metrics['rpm'] = f"{num:04d}"
+            except ValueError: pass
+
+    # Recurse through hardware children
+    if "Children" in node:
+        for child in node["Children"]:
+            find_sensors(child, metrics)
 
 def main():
-    PORT = 'COM3'
-    BAUD = 115200
+    # 1. Initialize Serial Connection
+    try:
+        ser = serial.Serial(COM_PORT, BAUD_RATE, timeout=1)
+        ser.dtr = True # Mandatory for ESP32-C6 Native USB
+        ser.rts = True
+        print(f"[+] Serial connection established on {COM_PORT}")
+    except serial.SerialException as e:
+        print(f"[-] FATAL: Could not open {COM_PORT}. {e}")
+        sys.exit(1)
 
-    print("Connecting to WMI (LibreHardwareMonitor)...")
-    w = None
+    print(f"[*] Connecting to LHM Web Server at {LHM_URL}...")
     
-    # Try LibreHardwareMonitor's native namespace first
-    try:
-        w = wmi.WMI(namespace=r"root\LibreHardwareMonitor")
-    except Exception as e1:
-        print(f"[Debug] LHM Namespace Error: {e1}")
-        # Fallback to legacy OpenHardwareMonitor namespace
+    # 2. Main Telemetry Loop
+    while True:
         try:
-            w = wmi.WMI(namespace=r"root\OpenHardwareMonitor")
-        except Exception as e2:
-            print(f"[Debug] OHM Namespace Error: {e2}")
-
-    use_web_api = False
-    if w is None:
-        print("\n[Fallback] Failed to connect to WMI.")
-        print("Switching to HTTP Web Server fallback mode...")
-        print("Please ensure LibreHardwareMonitor has 'Options -> Run Web Server' checked (Port 8085).\n")
-        use_web_api = True
-
-    try:
-        ser = serial.Serial(PORT, BAUD, timeout=1)
-    except Exception as e:
-        print(f"Failed to open {PORT}. Ensure it is not locked by the PlatformIO Serial Monitor.")
-        return
-
-    print(f"Streaming telemetry payload to {PORT}... (Press Ctrl+C to stop)")
-
-    try:
-        while True:
-            cpu_temp = 0
-            fan_rpm = 0
-
-            if not use_web_api:
-                # Iterate through WMI sensors to find the target data
-                sensors = w.Sensor()
-                for sensor in sensors:
-                    # Note: You may need to tweak the sensor.Name conditions to perfectly match your hardware
-                    if sensor.SensorType == 'Temperature' and ('CPU Package' in sensor.Name or 'CPU Core' in sensor.Name):
-                        cpu_temp = int(sensor.Value)
-                    elif sensor.SensorType == 'Fan' and ('Fan #1' in sensor.Name or 'CPU Fan' in sensor.Name):
-                        fan_rpm = int(sensor.Value)
-            else:
-                t, r = get_web_telemetry()
-                if t is not None and r is not None:
-                    cpu_temp = t
-                    fan_rpm = r
-                else:
-                    print("[Warn] Failed to read from Web Server. Is 'Options -> Run Web Server' checked?")
-
-            payload = f"<T:{cpu_temp},R:{fan_rpm}>"
-            ser.write(payload.encode('ascii'))
-            print(f"Transmitted: {payload}")
+            metrics = {'temp': "00", 'rpm': "0000"}
             
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print("\nStopping telemetry stream...")
-    finally:
-        ser.close()
+            # Request JSON payload from localhost
+            req = urllib.request.Request(LHM_URL)
+            with urllib.request.urlopen(req, timeout=1) as response:
+                data = json.loads(response.read().decode())
+                find_sensors(data, metrics)
 
-if __name__ == '__main__':
+            # Construct Payload: <T:XX,R:XXXX>
+            payload = f"<T:{metrics['temp']},R:{metrics['rpm']}>\n"
+            ser.write(payload.encode('utf-8'))
+            print(f"Tx: {payload.strip()}")
+
+        except KeyboardInterrupt:
+            print("\n[*] Terminating daemon.")
+            ser.close()
+            sys.exit(0)
+        except Exception as e:
+            print(f"[-] Data Extraction Error: {e}")
+        
+        time.sleep(POLL_RATE_SEC)
+
+if __name__ == "__main__":
     main()
