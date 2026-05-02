@@ -34,7 +34,6 @@ Migration of hardware from an A01 Aluminum Mini-ITX chassis to a custom ~9L SFF 
 
 ## 4. Pending Actions
 * [ ] **Physical CPU Migration:** Execute swap to Intel Core i5-14400. Strict adjustment of PL1/PL2 power limits required in UEFI to prevent thermal throttling against the Noctua NH-L9i-17xx.
-* [ ] **Front Panel Fabrication:** Measure exact physical tolerances of the Waveshare ESP32-C6 PCB and Type-C port using digital calipers. Execute Shapr3D cuts for flush mount.
 * [ ] **GPU Upgrade Execution:** Procure a sub-252mm NVIDIA GPU optimized for Insta360 Studio and native 120Hz display output via HDMI 2.1 (~$300 CAD secondary market). Options: RTX 4060 8GB or RTX 3060 12GB.
 
 ## 5. Telemetry & Hardware Monitoring Architecture
@@ -43,33 +42,26 @@ Migration of hardware from an A01 Aluminum Mini-ITX chassis to a custom ~9L SFF 
 
 ### 5.1. Host Infrastructure & Deployment
 * **Hardware Monitoring Engine:** LibreHardwareMonitor (LHM). 
-    * Must be executed as Administrator.
-    * WMI Server must be explicitly enabled via `Options -> Run WMI Server` to broadcast kernel-level thermals to the OS.
-* **Python Environment:** Global Windows Python 3.14 installation required. Executed via the `py` launcher. Dependencies: `pip install wmi pyserial`.
-* **Host Daemon:** Python script (`telemetry_stream.py`) querying the LHM WMI namespace. Extracts CPU Temp/Fan RPM and transmits formatted binary strings (`<T:XX,R:XXXX>`) to the ESP32-C6 over the virtual USB CDC COM port every 2.0s.
+    * Localhost Web Server explicitly enabled on Port `8085`.
+    * HTTP Basic Authentication active (Credentials: `sffmonitor` / `sffmonitor`).
+* **Python Environment:** Global Windows Python 3.14 installation required. Executed via the `py` launcher. 
+* **Host Daemon:** Python script (`telemetry_stream.py`) querying the LHM JSON namespace. Extracts CPU Temp/Fan RPM and transmits formatted binary strings (`<T:XX,R:XXXX>`) to the ESP32-C6 over the virtual USB CDC COM port every 2.0s. Includes Base64 authentication header construction to bypass LHM security.
 * **Startup Initialization:** VBScript wrapper (`launch_telemetry.vbs`) configured in Windows `shell:startup` to execute the Python daemon silently (`pythonw.exe`) in the background on user login.
 
-## 6. ESP32-C6 Display Recovery & Initialization Protocol
-Required execution path when the module is stuck in a Watchdog Timer (WDT) boot-loop, presents a blank LCD panel, or drops the native USB serial connection.
+## 6. ESP32-C6 Display Recovery & Source Code
+Required execution paths and source code configurations for the telemetry array.
 
 ### 6.1. Flash Memory Erase
-Delete the hidden `.pio` directory to clear corrupted compilation caches. Execute the following in PowerShell to format the chip.
+If the microcontroller is actively crashing, hold the physical **BOOT** button, short-press **RST**, and release **BOOT** to force Download Mode. Execute the following to wipe the flash memory:
 
-'''powershell
+```powershell
 & "$env:USERPROFILE\.platformio\penv\Scripts\python.exe" -m platformio run --target erase
-'''
+```
 
-### 6.2. Hardware Interrupt (Download Mode)
-If the microcontroller is actively crashing (erratic backlight flashing/strobe), software flashing will fail. The WDT boot-loop must be physically interrupted:
-1. Press and hold the physical **BOOT** button on the rear of the module.
-2. Short-press the physical **RST** button.
-3. Release the **BOOT** button.
-The device is now suspended in ROM Download Mode and is receptive to new firmware.
-
-### 6.3. PlatformIO Hardware Configuration (`platformio.ini`)
+### 6.2. PlatformIO Configuration (`platformio.ini`)
 The v0.2 hardware revision requires `dio` flash mode to prevent crashing, and explicit DTR/RTS assertion to wake up the internal USB CDC interface.
 
-'''ini
+```ini
 [env:esp32-c6-devkitc-1]
 platform = espressif32
 board = esp32-c6-devkitc-1
@@ -89,15 +81,109 @@ build_flags =
 
 lib_deps = 
     lovyan03/LovyanGFX@^1.1.16
-'''
+```
+
+### 6.3. Host Python Daemon (`telemetry_stream.py`)
+Parses the LHM JSON endpoint with Basic Auth and pushes payloads to the COM port.
+
+```python
+import urllib.request
+import json
+import serial
+import time
+import sys
+import base64
+
+# --- Configuration ---
+COM_PORT = 'COM3'
+BAUD_RATE = 115200
+POLL_RATE_SEC = 2.0
+LHM_URL = "http://localhost:8085/data.json"
+AUTH_USER = "sffmonitor"
+AUTH_PASS = "sffmonitor"
+
+def find_sensors(node, metrics):
+    """Recursively traverse the LHM JSON tree to extract values."""
+    if "Text" in node and "Value" in node:
+        text = node["Text"]
+        value = node["Value"]
+
+        # 1. Match CPU Package Temperature
+        if "CPU Package" in text and "°C" in value:
+            try:
+                num = float(value.replace(",", ".").split()[0])
+                metrics['temp'] = f"{int(num):02d}"
+            except ValueError: pass
+        
+        # 2. Match Fan RPM
+        elif "Fan" in text and "RPM" in value:
+            try:
+                num = int(value.replace(",", "").split()[0])
+                if num > 0 and metrics['rpm'] == "0000":
+                    metrics['rpm'] = f"{num:04d}"
+            except ValueError: pass
+
+    # Recurse through hardware children
+    if "Children" in node:
+        for child in node["Children"]:
+            find_sensors(child, metrics)
+
+def main():
+    # 1. Initialize Serial Connection
+    try:
+        ser = serial.Serial(COM_PORT, BAUD_RATE, timeout=1)
+        ser.dtr = True # Mandatory for ESP32-C6 Native USB
+        ser.rts = True
+        print(f"[+] Serial connection established on {COM_PORT}")
+    except serial.SerialException as e:
+        print(f"[-] FATAL: Could not open {COM_PORT}. {e}")
+        sys.exit(1)
+
+    print(f"[*] Connecting to LHM Web Server at {LHM_URL}...")
+    
+    # Pre-compute Base64 HTTP Basic Auth string
+    auth_str = f"{AUTH_USER}:{AUTH_PASS}"
+    auth_b64 = base64.b64encode(auth_str.encode('ascii')).decode('ascii')
+    
+    # 2. Main Telemetry Loop
+    while True:
+        try:
+            metrics = {'temp': "00", 'rpm': "0000"}
+            
+            # Request JSON payload with Auth Header
+            req = urllib.request.Request(LHM_URL)
+            req.add_header("Authorization", f"Basic {auth_b64}")
+            
+            with urllib.request.urlopen(req, timeout=1) as response:
+                data = json.loads(response.read().decode())
+                find_sensors(data, metrics)
+
+            # Construct Payload: <T:XX,R:XXXX>
+            payload = f"<T:{metrics['temp']},R:{metrics['rpm']}>\n"
+            ser.write(payload.encode('utf-8'))
+            print(f"Tx: {payload.strip()}")
+
+        except KeyboardInterrupt:
+            print("\n[*] Terminating daemon.")
+            ser.close()
+            sys.exit(0)
+        except Exception as e:
+            print(f"[-] Data Extraction Error: {e}")
+        
+        time.sleep(POLL_RATE_SEC)
+
+if __name__ == "__main__":
+    main()
+```
 
 ### 6.4. Hardware Validation Firmware (`src/main.cpp`)
-Deploy this minimalist graphical test to verify SPI pin mappings and PWM backlight control prior to integrating serial payload ingestion.
+Main rendering pipeline. Initializes with a status message and clears the buffer upon receipt of the first valid payload.
 
-'''cpp
+```cpp
 #include <Arduino.h>
 #include <LovyanGFX.hpp>
 
+// Custom hardware configuration class for Waveshare ESP32-C6 1.47" (v0.2)
 class LGFX : public lgfx::LGFX_Device {
   lgfx::Panel_ST7789 _panel_instance;
   lgfx::Bus_SPI _bus_instance;
@@ -114,7 +200,7 @@ public:
       cfg.pin_sclk = 7;
       cfg.pin_mosi = 6;
       cfg.pin_miso = -1;
-      cfg.pin_dc = 15; // Validated v0.2 Data/Command pin
+      cfg.pin_dc = 15; // Validated Data/Command pin
       _bus_instance.config(cfg);
       _panel_instance.setBus(&_bus_instance);
     }
@@ -134,7 +220,7 @@ public:
     // 3. Configure Hardware Backlight
     {
       auto cfg = _light_instance.config();
-      cfg.pin_bl = 22; // Validated v0.2 Hardware Backlight Pin
+      cfg.pin_bl = 22; // Validated Hardware Backlight Pin
       cfg.invert = false;
       cfg.freq = 44100;
       cfg.pwm_channel = 7;
@@ -146,15 +232,22 @@ public:
 };
 
 LGFX lcd;
+String inputString = "";
+boolean stringComplete = false;
+int currentTemp = 0;
+int currentRPM = 0;
+boolean firstPayloadReceived = false;
 
 void setup() {
   Serial.begin(115200);
   
+  // Initialize graphics pipeline
   lcd.init();
   lcd.setRotation(1); 
   lcd.setBrightness(128); 
   lcd.fillScreen(TFT_BLACK);
   
+  // Render Test UI
   lcd.setTextColor(TFT_GREEN, TFT_BLACK);
   lcd.setTextSize(2);
   lcd.setCursor(10, 10);
@@ -166,12 +259,55 @@ void setup() {
 }
 
 void loop() {
-  delay(1000);
-}
-'''
+  // 1. Ingest Serial Stream
+  while (Serial.available()) {
+    char inChar = (char)Serial.read();
+    inputString += inChar;
+    if (inChar == '>') {
+      stringComplete = true;
+    }
+  }
 
-### 6.5. Expected Boot Sequence & Validation
-1. **Compilation & Flash:** Terminal reports `[SUCCESS]`.
-2. **Execution:** Press the physical **RST** button to boot the new firmware.
-3. **USB Mount:** Windows emits the USB connection chime. The ESP32-C6 automatically creates a new Virtual USB Serial COM port.
-4. **Visual Output:** The 1.47" LCD activates and displays "SYSTEM NOMINAL" in green text, confirming exact alignment of the SPI and PWM pins.
+  // 2. Parse Payload & Render
+  if (stringComplete) {
+    if (inputString.startsWith("<") && inputString.indexOf(">") > 0) {
+      
+      int tIndex = inputString.indexOf("T:");
+      int rIndex = inputString.indexOf("R:");
+      int commaIndex = inputString.indexOf(",");
+      int closeIndex = inputString.indexOf(">");
+
+      if (tIndex != -1 && rIndex != -1) {
+        // Clear the initial setup text on the very first successful read
+        if (!firstPayloadReceived) {
+          lcd.fillScreen(TFT_BLACK);
+          firstPayloadReceived = true;
+        }
+
+        String tempStr = inputString.substring(tIndex + 2, commaIndex);
+        String rpmStr = inputString.substring(rIndex + 2, closeIndex);
+        
+        currentTemp = tempStr.toInt();
+        currentRPM = rpmStr.toInt();
+
+        // Render Data 
+        lcd.setTextSize(3);
+        
+        // Temperature Block
+        lcd.setCursor(10, 30); 
+        lcd.setTextColor(TFT_ORANGE, TFT_BLACK); 
+        lcd.printf("CPU: %02d C  ", currentTemp);
+
+        // Fan RPM Block
+        lcd.setCursor(10, 80); 
+        lcd.setTextColor(TFT_CYAN, TFT_BLACK);
+        lcd.printf("FAN: %04d RPM  ", currentRPM);
+      }
+    }
+    
+    // 3. Reset Buffer
+    inputString = "";
+    stringComplete = false;
+  }
+}
+```
