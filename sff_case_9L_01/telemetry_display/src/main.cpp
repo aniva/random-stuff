@@ -1,6 +1,10 @@
 #include <Arduino.h>
 #include <LovyanGFX.hpp>
 
+// --- Display Configuration ---
+// Set to true for Landscape, false for Portrait (USB on top)
+const bool IS_LANDSCAPE = false;
+
 // 1. Hardware Configuration Class
 class LGFX : public lgfx::LGFX_Device
 {
@@ -66,7 +70,14 @@ void setup()
 {
   Serial.begin(115200);
   lcd.init();
-  lcd.setRotation(1);
+  
+  // Apply the orientation based on configuration
+  if (IS_LANDSCAPE) {
+    lcd.setRotation(1); // Landscape
+  } else {
+    lcd.setRotation(2); // Portrait, inverted (USB at top)
+  }
+  
   lcd.setBrightness(128);
   lcd.fillScreen(TFT_BLACK);
 
@@ -99,8 +110,8 @@ void loop()
       int r = getValueByTag(inputString, "R:", ',');
       int g_t = getValueByTag(inputString, "G:", ',');
       int m = getValueByTag(inputString, "M:", ',');
-      int c_l = getValueByTag(inputString, "C:", ','); // CPU Load
-      int g_l = getValueByTag(inputString, "L:", '>'); // GPU Load
+      int c_l = getValueByTag(inputString, "C:", ','); // CPU Load[cite: 4]
+      int g_l = getValueByTag(inputString, "L:", '>'); // GPU Load[cite: 4]
 
       if (t != -1 && r != -1)
       {
@@ -112,29 +123,59 @@ void loop()
 
         lcd.setTextSize(2);
 
-        // ROW 1: Temps
-        lcd.setCursor(10, 20);
-        lcd.setTextColor(TFT_ORANGE, TFT_BLACK);
-        lcd.printf("CPU: %02d C", t);
-        lcd.setCursor(170, 20);
-        lcd.setTextColor(TFT_GREEN, TFT_BLACK);
-        lcd.printf("GPU: %02d C", g_t);
+        if (IS_LANDSCAPE) 
+        {
+          // ROW 1: Temps[cite: 4]
+          lcd.setCursor(10, 20);
+          lcd.setTextColor(TFT_ORANGE, TFT_BLACK);
+          lcd.printf("CPU: %02d C", t);
+          lcd.setCursor(170, 20);
+          lcd.setTextColor(TFT_GREEN, TFT_BLACK);
+          lcd.printf("GPU: %02d C", g_t);
 
-        // ROW 2: Dynamics (Fan & SSD)
-        lcd.setCursor(10, 60);
-        lcd.setTextColor(TFT_CYAN, TFT_BLACK);
-        lcd.printf("FAN: %04d", r);
-        lcd.setCursor(170, 60);
-        lcd.setTextColor(TFT_YELLOW, TFT_BLACK);
-        lcd.printf("SSD: %02d C", m);
+          // ROW 2: Dynamics (Fan & SSD)[cite: 4]
+          lcd.setCursor(10, 60);
+          lcd.setTextColor(TFT_CYAN, TFT_BLACK);
+          lcd.printf("FAN: %04d", r);
+          lcd.setCursor(170, 60);
+          lcd.setTextColor(TFT_YELLOW, TFT_BLACK);
+          lcd.printf("SSD: %02d C", m);
 
-        // ROW 3: System Load (The New Row)
-        lcd.setCursor(10, 100);
-        lcd.setTextColor(TFT_WHITE, TFT_BLACK);
-        lcd.printf("CPU L: %02d%%", c_l);
-        lcd.setCursor(170, 100);
-        lcd.setTextColor(TFT_MAGENTA, TFT_BLACK);
-        lcd.printf("GPU L: %02d%%", g_l);
+          // ROW 3: System Load (The New Row)[cite: 4]
+          lcd.setCursor(10, 100);
+          lcd.setTextColor(TFT_WHITE, TFT_BLACK);
+          lcd.printf("CPU L: %02d%%", c_l);
+          lcd.setCursor(170, 100);
+          lcd.setTextColor(TFT_MAGENTA, TFT_BLACK);
+          lcd.printf("GPU L: %02d%%", g_l);
+        } 
+        else 
+        {
+          // Portrait Layout (Stacked vertically, X=10 for all)
+          lcd.setCursor(10, 20);
+          lcd.setTextColor(TFT_ORANGE, TFT_BLACK);
+          lcd.printf("CPU: %02d C", t);
+
+          lcd.setCursor(10, 60);
+          lcd.setTextColor(TFT_GREEN, TFT_BLACK);
+          lcd.printf("GPU: %02d C", g_t);
+
+          lcd.setCursor(10, 100);
+          lcd.setTextColor(TFT_CYAN, TFT_BLACK);
+          lcd.printf("FAN: %04d", r);
+
+          lcd.setCursor(10, 140);
+          lcd.setTextColor(TFT_YELLOW, TFT_BLACK);
+          lcd.printf("SSD: %02d C", m);
+
+          lcd.setCursor(10, 180);
+          lcd.setTextColor(TFT_WHITE, TFT_BLACK);
+          lcd.printf("CPU L: %02d%%", c_l);
+
+          lcd.setCursor(10, 220);
+          lcd.setTextColor(TFT_MAGENTA, TFT_BLACK);
+          lcd.printf("GPU L: %02d%%", g_l);
+        }
       }
     }
     inputString = "";
