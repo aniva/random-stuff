@@ -1,8 +1,14 @@
 #include <Arduino.h>
 #include <LovyanGFX.hpp>
+#include <Wire.h>
+#include <Adafruit_AHTX0.h>
+#include <Adafruit_BMP280.h>
 
 // --- Hardware Pin Definitions ---
 #define HDD_LED_PIN 4 
+#define PWR_LED_PIN 5 
+#define I2C_SDA_PIN 0
+#define I2C_SCL_PIN 1
 
 // --- Display Configuration ---
 // Set to true for Landscape, false for Portrait (USB on top)
@@ -52,9 +58,23 @@ public:
 
 // 2. Global Instances & Variables
 LGFX lcd;
+Adafruit_AHTX0 aht;
+Adafruit_BMP280 bmp;
+
 String inputString = "";
 bool stringComplete = false;
 bool firstPayloadReceived = false;
+
+// Sensor Variables & Non-Blocking Timer
+float caseTemp = 0.0;
+float caseHum = 0.0;
+bool sensorsInitialized = false;
+unsigned long lastSensorRead = 0;
+const unsigned long SENSOR_INTERVAL = 5000; // Poll ambient every 5000ms
+
+// Hardware LED State Tracking (Set to -1 to force an initial draw)
+int lastDiskState = -1;
+int lastPwrState = -1;
 
 // --- Unified Color Logic Helpers ---
 uint16_t getTempColor(int temp) {
@@ -79,12 +99,10 @@ uint16_t getFanColor(int rpm) {
 int getValueByTag(String data, String tag, char endChar)
 {
   int tagIndex = data.indexOf(tag);
-  if (tagIndex == -1)
-    return -1;
+  if (tagIndex == -1) return -1;
   int startIndex = tagIndex + tag.length();
   int endIndex = data.indexOf(endChar, startIndex);
-  if (endIndex == -1)
-    endIndex = data.indexOf('>', startIndex);
+  if (endIndex == -1) endIndex = data.indexOf('>', startIndex);
   return data.substring(startIndex, endIndex).toInt();
 }
 
@@ -92,16 +110,29 @@ void setup()
 {
   Serial.begin(115200);
   
-  // Initialize Optocoupler Input
-  pinMode(HDD_LED_PIN, INPUT);
+  // Initialize Optocoupler Inputs with internal pull-up resistors
+  pinMode(HDD_LED_PIN, INPUT_PULLUP);
+  pinMode(PWR_LED_PIN, INPUT_PULLUP);
+
+  // Initialize I2C Bus for Sensors
+  Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
+  
+  if (aht.begin() && bmp.begin()) {
+    sensorsInitialized = true;
+    // Set BMP280 to standard mode
+    bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,
+                    Adafruit_BMP280::SAMPLING_X2,
+                    Adafruit_BMP280::SAMPLING_X16,
+                    Adafruit_BMP280::FILTER_X16,
+                    Adafruit_BMP280::STANDBY_MS_500);
+  }
 
   lcd.init();
   
-  // Apply the orientation based on configuration
   if (IS_LANDSCAPE) {
-    lcd.setRotation(1); // Landscape
+    lcd.setRotation(1); 
   } else {
-    lcd.setRotation(2); // Portrait, inverted (USB at top)
+    lcd.setRotation(2); 
   }
   
   lcd.setBrightness(128);
@@ -116,33 +147,78 @@ void setup()
 
 void loop()
 {
-  // 1. Process Hardware Disk IO (Zero Latency via Optocoupler)
+  // =================================================================
+  // 1. EVENT-DRIVEN HARDWARE LEDs (Zero Latency, Zero Spam)
+  // =================================================================
   int diskState = digitalRead(HDD_LED_PIN);
+  int pwrState = digitalRead(PWR_LED_PIN);
   
-  // Adjust indicator position based on orientation
-  int dotX = IS_LANDSCAPE ? 300 : 150; 
-  
-  if (diskState == LOW) {
-    lcd.fillCircle(dotX, 10, 5, TFT_GREEN); // Active
-  } else {
-    lcd.fillCircle(dotX, 10, 5, TFT_BLACK); // Idle
+  if (pwrState != lastPwrState) {
+    int pwrDotX = IS_LANDSCAPE ? 280 : 130; 
+    if (pwrState == LOW) lcd.fillCircle(pwrDotX, 10, 5, TFT_BLUE); 
+    else lcd.fillCircle(pwrDotX, 10, 5, TFT_BLACK); 
+    lastPwrState = pwrState;
   }
 
-  // 2. Serial Ingestion
+  if (diskState != lastDiskState) {
+    int hddDotX = IS_LANDSCAPE ? 300 : 150; 
+    if (diskState == LOW) lcd.fillCircle(hddDotX, 10, 5, TFT_GREEN); 
+    else lcd.fillCircle(hddDotX, 10, 5, TFT_BLACK); 
+    lastDiskState = diskState;
+  }
+
+ // =================================================================
+  // 2. NON-BLOCKING LOCAL SENSOR POLLING (Independent of PC)
+  // =================================================================
+  if (sensorsInitialized && (millis() - lastSensorRead >= SENSOR_INTERVAL)) {
+    sensors_event_t humidity, temp;
+    aht.getEvent(&humidity, &temp);
+    caseTemp = temp.temperature;
+    caseHum = humidity.relative_humidity;
+    lastSensorRead = millis();
+
+    lcd.setTextSize(2);
+    lcd.setTextColor(TFT_CYAN, TFT_BLACK);
+
+    // Only draw the standard UI if the PC has connected
+    if (firstPayloadReceived) {
+      if (IS_LANDSCAPE) {
+        lcd.setCursor(10, 140);
+        lcd.printf("AMB: %02d C  ", (int)caseTemp);
+        lcd.setCursor(170, 140);
+        lcd.printf("HUM: %02d%%  ", (int)caseHum);
+      } else {
+        lcd.setCursor(10, 260);
+        lcd.printf("AMB: %02d C  ", (int)caseTemp);
+        lcd.setCursor(10, 300);
+        lcd.printf("HUM: %02d%%  ", (int)caseHum);
+      }
+    } 
+    // If waiting for the PC, draw the temps on the boot screen
+    else {
+      if (IS_LANDSCAPE) {
+        lcd.setCursor(10, 60); 
+      } else {
+        lcd.setCursor(10, 80); 
+      }
+      lcd.printf("Case Amb: %02dC / %02d%%", (int)caseTemp, (int)caseHum);
+    }
+  }
+
+  // =================================================================
+  // 3. SERIAL INGESTION (PC Telemetry)
+  // =================================================================
   while (Serial.available())
   {
     char inChar = (char)Serial.read();
     inputString += inChar;
-    if (inChar == '>')
-      stringComplete = true;
+    if (inChar == '>') stringComplete = true;
   }
 
-  // 3. Payload Parsing
   if (stringComplete)
   {
     if (inputString.startsWith("<") && inputString.indexOf(">") > 0)
     {
-      // Extract values
       int t = getValueByTag(inputString, "T:", ',');
       int r = getValueByTag(inputString, "R:", ',');
       int g_t = getValueByTag(inputString, "G:", ',');
@@ -155,6 +231,11 @@ void loop()
         if (!firstPayloadReceived)
         {
           lcd.fillScreen(TFT_BLACK);
+          
+          // Force LEDs to redraw over the newly wiped black screen
+          lastDiskState = -1;
+          lastPwrState = -1;
+          
           firstPayloadReceived = true;
         }
 
@@ -162,7 +243,6 @@ void loop()
 
         if (IS_LANDSCAPE) 
         {
-          // ROW 1: Temps 
           lcd.setCursor(10, 20);
           lcd.setTextColor(getTempColor(t), TFT_BLACK);
           lcd.printf("CPU: %02d C  ", t);
@@ -171,7 +251,6 @@ void loop()
           lcd.setTextColor(getTempColor(g_t), TFT_BLACK);
           lcd.printf("GPU: %02d C  ", g_t);
 
-          // ROW 2: Dynamics (Fan & SSD)
           lcd.setCursor(10, 60);
           lcd.setTextColor(getFanColor(r), TFT_BLACK);
           lcd.printf("FAN: %04d  ", r);
@@ -180,7 +259,6 @@ void loop()
           lcd.setTextColor(getTempColor(m), TFT_BLACK);
           lcd.printf("SSD: %02d C  ", m);
 
-          // ROW 3: System Load
           lcd.setCursor(10, 100);
           lcd.setTextColor(getLoadColor(c_l), TFT_BLACK);
           lcd.printf("CPU L: %02d%%  ", c_l);
@@ -191,7 +269,6 @@ void loop()
         } 
         else 
         {
-          // Portrait Layout
           lcd.setCursor(10, 20);
           lcd.setTextColor(getTempColor(t), TFT_BLACK);
           lcd.printf("CPU: %02d C  ", t);
