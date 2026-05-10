@@ -531,3 +531,29 @@ void loop()
   }
 }
 ```
+
+### 6.5. ADC Threshold Diagnostic Firmware
+Required to calibrate the `analogRead` threshold if substituting optocoupler hardware. This script bypasses the LovyanGFX library to stream raw voltage telemetry directly to the PlatformIO Serial Monitor (115200 baud).
+
+```cpp
+#include <Arduino.h>
+
+const int hddLedPin = 4;
+
+void setup() {
+    Serial.begin(115200);
+    // Initial hardware pull-up assertion
+    pinMode(hddLedPin, INPUT_PULLUP);
+}
+
+void loop() {
+    // Re-assert pull-up immediately before ADC routing to counter pad reset
+    pinMode(hddLedPin, INPUT_PULLUP); 
+    
+    int rawAdcValue = analogRead(hddLedPin);
+    Serial.println(rawAdcValue);
+    
+    // 50ms interval ensures capture of microsecond HDD flashes without buffer overflow
+    delay(50); 
+}
+```
