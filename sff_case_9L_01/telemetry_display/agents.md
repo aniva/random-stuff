@@ -37,7 +37,7 @@ Migration of hardware from an A01 Aluminum Mini-ITX chassis to a custom ~9L SFF 
 
 ## 5. Telemetry & Hardware Monitoring Architecture
 * **Microcontroller:** Waveshare ESP32-C6 Development Board. 
-* **Firmware Stack:** C++ compiled via PlatformIO. Uses `LovyanGFX` for ST7789 display driving. UI follows a RobCo/Fallout terminal aesthetic (Green on Black) featuring a 128x128px Vault Boy boot logo.
+* **Firmware Stack:** C++ compiled via PlatformIO. Uses `LovyanGFX` for ST7789 display driving. UI follows a RobCo/Fallout terminal aesthetic (Green on Black) featuring a 128x128px Vault Boy boot logo and 32x32px dynamic hardware icons. Data arrays are explicitly offloaded to a dedicated header file (`bitmaps.h`) to optimize compilation.
 * **Ambient Sensors:** I2C bus deployed on GPIO 0 (SDA) and GPIO 1 (SCL) supporting AHT20 and BMP280 modules.
 
 ### 5.1. Hardware Zero-Latency Status Indicators (Opto-Isolation)
@@ -52,31 +52,27 @@ To bypass software polling delays, disk activity and power states are wired dire
 * **Dynamic Dimming:** The host daemon utilizes the `astral` library to calculate local sunset/sunrise for Mississauga, ON. The script appends a brightness target (`B:255` or `B:30`) to the serial payload based on configurable hour offsets from the solar events.
 * **Service Deployment:** Executed silently via Windows Scheduled Task (`SFF_Telemetry_Daemon`) running with Highest Privileges at User Logon.
 
+### 5.3. Icon & Bitmap Generation Protocol
+Follow these strict procedures to generate and ingest custom UI assets (e.g., Pip-Boy, HDD, PWR) into the firmware:
+1. **Asset Generation:** Produce the raw icon utilizing an LLM image generator. Specify exactly two colors: **Green and Black**.
+2. **Dimensional Bounds:** Ensure the icon is a perfect square matching the target canvas size (e.g., `128x128` for the boot logo, `32x32` for hardware icons).
+3. **Manual Correction:** If necessary, execute a final crop using a local image editor to ensure the asset perfectly fits the dimensional limits.
+4. **Data Conversion:** Upload the asset to [image2cpp](https://javl.github.io/image2cpp/).
+5. **Tool Configuration:** Apply the following parameters strictly. *(Note: Do NOT check "Invert image colors". Native green/black generation is processed directly.)*
+   * **Canvas size:** `128 x 128` (or `32 x 32`)
+   * **Background color:** `Black`
+   * **Invert image colors:** `[UNCHECKED]`
+   * **Brightness / alpha threshold:** `128`
+   * **Scaling:** `scale to fit, keeping proportions`
+   * **Center image:** `horizontally [CHECKED]`, `vertically [CHECKED]`
+   * **Code output format:** `Arduino code`
+   * **Draw mode:** `Horizontal - 1 bit per pixel`
+6. **Ingestion:** Generate the code, copy the resulting array, and paste it into the designated variable within the `src/bitmaps.h` file.
+
 ## 6. Code Infrastructure (Truncated Reference)
 *Note: Boilerplate rendering logic, WMI fallbacks, and large hex arrays are omitted for brevity.*
 
-### 6.1. PlatformIO Configuration (`platformio.ini`)
-Requires `dio` flash mode for v0.2 hardware and explicit DTR/RTS assertion.
-
-```ini
-[env:esp32-c6-devkitc-1]
-platform = espressif32
-board = esp32-c6-devkitc-1
-framework = arduino
-monitor_speed = 115200
-board_build.flash_mode = dio
-monitor_dtr = 1
-monitor_rts = 1
-build_flags = 
-    -D ARDUINO_USB_MODE=1
-    -D ARDUINO_USB_CDC_ON_BOOT=1
-lib_deps = 
-    lovyan03/LovyanGFX@^1.1.16
-    adafruit/Adafruit AHTX0@^2.0.5
-    adafruit/Adafruit BMP280 Library@^2.6.8
-```
-
-### 6.2. Python Host Daemon (`telemetry_stream.py`)
+### 6.1. Python Host Daemon (`telemetry_stream.py`)
 **Dependencies:** `pip install astral pytz wmi pyserial`
 
 ```python
@@ -115,12 +111,25 @@ def main():
         time.sleep(2.0)
 ```
 
-### 6.3. ESP32 Firmware (`main.cpp`)
-Main rendering loop includes a 10-second payload timeout to revert brightness if the host daemon disconnects.
+### 6.2. ESP32 Asset Header (`src/bitmaps.h`)
+Isolates UI data to prevent compiler bloat.
 
 ```cpp
+#pragma once
+#include <Arduino.h>
+
+// Replace with arrays generated via image2cpp (Invert UNCHECKED)
+const unsigned char epd_bitmap_pipboy [] PROGMEM = { /* ... */ };
+const unsigned char epd_bitmap_hdd [] PROGMEM = { /* ... */ };
+const unsigned char epd_bitmap_pwr [] PROGMEM = { /* ... */ };
+```
+
+### 6.3. ESP32 Firmware (`src/main.cpp`)
+Main rendering loop includes a 10-second payload timeout to revert brightness if the host daemon disconnects, and typecasted background rendering for 0-latency icons.
+
+```cpp
+#include "bitmaps.h"
 // [ ... TRUNCATED LOVYANGFX INIT & SENSOR SETUP ... ]
-// [ ... TRUNCATED 128x128 PIP-BOY BITMAP ARRAY ... ]
 
 unsigned long lastPayloadTime = 0;
 const unsigned long PAYLOAD_TIMEOUT = 10000; 
@@ -131,7 +140,14 @@ void loop() {
   // 1. Hardware LED Optocoupler Parsing
   int diskState = (analogRead(HDD_LED_PIN) < 3000) ? LOW : HIGH;
   int pwrState  = (analogRead(PWR_LED_PIN) < 3000) ? LOW : HIGH;
-  // [ ... TRUNCATED ICON RENDERING ... ]
+  
+  if (diskState != lastDiskState) {
+    uint16_t hddColor = (diskState == LOW) ? TFT_GREEN : TFT_DARKGREY;
+    // Explicit uint16_t cast prevents compiler template mismatch
+    lcd.drawBitmap(130, 245, epd_bitmap_hdd, 32, 32, hddColor, (uint16_t)TFT_BLACK);
+    lastDiskState = diskState;
+  }
+  // [ ... TRUNCATED PWR ICON RENDERING ... ]
 
   // 2. Local Ambient Sensors
   // [ ... TRUNCATED I2C AHT/BMP POLLING ... ]
@@ -153,9 +169,7 @@ void loop() {
 
   if (stringComplete) {
     if (inputString.startsWith("<") && inputString.indexOf(">") > 0) {
-      // Parse tags
       int t = getValueByTag(inputString, "T:", ',');
-      // [ ... TRUNCATED OTHER SENSOR TAGS ... ]
       int b = getValueByTag(inputString, "B:", '>'); 
 
       if (t != -1) {
