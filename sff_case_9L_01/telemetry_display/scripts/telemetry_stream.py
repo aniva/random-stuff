@@ -1,134 +1,123 @@
-import urllib.request
-import json
-import serial
 import time
+import serial
+import wmi
 import sys
-import base64
-import socket
+import urllib.request
+import urllib.error
+import json
+from datetime import datetime, timedelta
+from astral import LocationInfo
+from astral.sun import sun
+import pytz
 
-# --- Configuration ---
-COM_PORT = 'COM3'
-BAUD_RATE = 115200
-POLL_RATE_SEC = 2.0
-LHM_URL = "http://localhost:8085/data.json"
-LHM_PORT = 8085
-authUser = "sffmonitor"
-authPass = "sffmonitor"
+# --- Dimming Configuration ---
+cityData = LocationInfo("Mississauga", "Canada", "America/Toronto", 43.5890, -79.6441)
+xOffsetHrs = 1.0  # Hours AFTER sunset to start dimming
+yOffsetHrs = 1.0  # Hours BEFORE sunrise to stop dimming
+brightnessDay = 255
+brightnessNight = 30
 
-def check_lhm_server():
-    """Verify LHM web server is actually listening before starting."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.settimeout(2)
-        if s.connect_ex(('localhost', LHM_PORT)) == 0:
-            return True
-        return False
-
-def find_sensors(node, metrics):
-    if "Text" in node and "Value" in node:
-        text = node["Text"]
-        value = node["Value"]
+def getTargetBrightness():
+    tz = pytz.timezone(cityData.timezone)
+    now = datetime.now(tz)
+    try:
+        solarData = sun(cityData.observer, date=now.date(), tzinfo=tz)
+        dimStart = solarData["sunset"] + timedelta(hours=xOffsetHrs)
+        dimStop = solarData["sunrise"] - timedelta(hours=yOffsetHrs)
         
-        # CPU & GPU Temperatures
-        if "CPU Package" in text and "°C" in value:
-            metrics['temp'] = f"{int(float(value.replace(',', '.').split()[0])):02d}"
-        elif "GPU Core" in text and "°C" in value and "/gpu-nvidia/" in node.get("SensorId", ""):
-            metrics['gpu_t'] = f"{int(float(value.replace(',', '.').split()[0])):02d}"
+        if dimStop <= now <= dimStart:
+            return brightnessDay
+        else:
+            return brightnessNight
+    except Exception as e:
+        print(f"[-] Solar calculation error: {e}")
+        return brightnessDay
+
+def fetchHttpTelemetry():
+    def findSensor(node, tempRef, rpmRef):
+        textData = node.get("Text", "")
+        valueStr = node.get("Value", "")
         
-        # Dynamic Fan Averaging Logic
-        elif "Fan" in text and "RPM" in value:
+        if "CPU Package" in textData and "°C" in valueStr:
             try:
-                rpm_val = int(value.replace(',', '').split()[0])
-                if rpm_val > 0:
-                    metrics['fan_list'].append(rpm_val)
-            except ValueError: pass
-            
-        # Storage Metrics
-        elif "Composite Temperature" in text and "°C" in value:
-            metrics['nvme'] = f"{int(float(value.replace(',', '.').split()[0])):02d}"
-        elif "Total Activity" in text and "%" in value:
-            metrics['disk_a'] = f"{int(float(value.replace(',', '.').split()[0])):02d}"
-            
-        # Load Metrics
-        elif "CPU Total" in text and "%" in value:
-            metrics['cpu_l'] = f"{int(float(value.replace(',', '.').split()[0])):02d}"
-        elif "GPU Core" in text and "%" in value and "/gpu-nvidia/" in node.get("SensorId", ""):
-            metrics['gpu_l'] = f"{int(float(value.replace(',', '.').split()[0])):02d}"
+                tempRef[0] = str(int(float(valueStr.split(" ")[0].replace(',', '.'))))
+            except ValueError:
+                pass
+                
+        if "RPM" in valueStr:
+            if "CPU" in textData or rpmRef[0] == "0":
+                try:
+                    rpmRef[0] = str(int(float(valueStr.split(" ")[0].replace(',', '.'))))
+                except ValueError:
+                    pass
+                
+        for childNode in node.get("Children", []):
+            findSensor(childNode, tempRef, rpmRef)
 
-    if "Children" in node:
-        for child in node["Children"]:
-            find_sensors(child, metrics)
-
-def connect_serial():
-    """Attempts to open the serial port and returns the object."""
-    while True:
-        try:
-            ser = serial.Serial(COM_PORT, BAUD_RATE, timeout=1)
-            ser.dtr = True 
-            ser.rts = True
-            print(f"[+] Serial connection established on {COM_PORT}")
-            return ser
-        except (serial.SerialException, PermissionError):
-            print(f"[-] Waiting for {COM_PORT}... Is the USB unplugged?")
-            time.sleep(2)
+    try:
+        req = urllib.request.urlopen("http://localhost:8085/data.json", timeout=2)
+        dataMap = json.loads(req.read().decode('utf-8'))
+        tRef = ["0"]
+        rRef = ["0"]
+        findSensor(dataMap, tRef, rRef)
+        return tRef[0], rRef[0]
+    except Exception:
+        return "0", "0"
 
 def main():
-    # 1. Pre-Flight Check: LHM Server Status
-    print(f"[*] Checking for LHM server on port {LHM_PORT}...")
-    while not check_lhm_server():
-        print("[-] LHM Web Server not detected. Ensure it is started in LHM options.")
-        time.sleep(5)
-    print("[+] LHM Server detected.")
+    comPort = "COM3"
+    baudRate = 115200 
+    
+    try:
+        serPort = serial.Serial(comPort, baudRate, timeout=1)
+    except serial.SerialException as e:
+        print(f"Error: Could not open {comPort}. {e}")
+        sys.exit(1)
 
-    # 2. Establish Serial Link
-    ser = connect_serial()
-    
-    authStr = f"{authUser}:{authPass}"
-    authB64 = base64.b64encode(authStr.encode('ascii')).decode('ascii')
-    
-    print(f"[*] Monitoring LHM at {LHM_URL}...")
-    
-    while True:
+    print("Connecting to WMI (LibreHardwareMonitor)...")
+    wmiClient = None
+    useHttp = False
+
+    try:
+        wmiClient = wmi.WMI(namespace=r"root\LibreHardwareMonitor")
+    except wmi.x_wmi as e:
+        print(f"[Debug] LHM Namespace Error: {e}")
         try:
-            # Initialize metrics with defaults and an empty list for fan RPM aggregation
-            metrics = {
-                'temp': "00", 'gpu_t': "00", 'nvme': "00", 
-                'cpu_l': "00", 'gpu_l': "00", 'disk_a': "00", 'fan_list': []
-            }
-            
-            # 1. Fetch Data
-            req = urllib.request.Request(LHM_URL)
-            req.add_header("Authorization", f"Basic {authB64}")
+            wmiClient = wmi.WMI(namespace=r"root\OpenHardwareMonitor")
+        except wmi.x_wmi as e2:
+            print(f"[Debug] OHM Namespace Error: {e2}")
+            print("\n[Fallback] Failed to connect to WMI.")
+            print("Switching to HTTP Web Server fallback mode...")
+            useHttp = True
+
+    print(f"Streaming telemetry payload to {comPort}... (Press Ctrl+C to stop)")
+
+    while True:
+        cpuTemp = "0"
+        fanRpm = "0"
+
+        if not useHttp:
             try:
-                with urllib.request.urlopen(req, timeout=1) as response:
-                    data = json.loads(response.read().decode())
-                    find_sensors(data, metrics)
+                for sensorObj in wmiClient.Sensor():
+                    if sensorObj.SensorType == "Temperature" and "CPU Package" in sensorObj.Name:
+                        cpuTemp = str(int(sensorObj.Value))
+                    elif sensorObj.SensorType == "Fan" and "CPU" in sensorObj.Name:
+                        fanRpm = str(int(sensorObj.Value))
             except Exception as e:
-                print(f"[-] HTTP Error: {e}")
-                time.sleep(POLL_RATE_SEC)
-                continue
+                print(f"WMI Error: {e}")
+        else:
+            cpuTemp, fanRpm = fetchHttpTelemetry()
 
-            # Compute average RPM
-            avg_rpm = sum(metrics['fan_list']) // len(metrics['fan_list']) if metrics['fan_list'] else 0
-
-            # 2. Construct & Send Payload
-            payload = f"<T:{metrics['temp']},R:{avg_rpm:04d},G:{metrics['gpu_t']},M:{metrics['nvme']},C:{metrics['cpu_l']},L:{metrics['gpu_l']},D:{metrics['disk_a']}>\n"
-            
-            try:
-                ser.write(payload.encode('utf-8'))
-                print(f"Tx: {payload.strip()}")
-            except (serial.SerialException, serial.PortNotOpenError, Exception) as e:
-                print(f"[!] Serial link lost: {e}. Attempting recovery...")
-                ser.close()
-                ser = connect_serial() 
-
-        except KeyboardInterrupt:
-            print("\n[*] Terminating daemon.")
-            ser.close()
-            sys.exit(0)
-        except Exception as e:
-            print(f"[-] Data Extraction Error: {e}")
+        targetBrightness = getTargetBrightness()
+        payloadStr = f"<T:{cpuTemp},R:{fanRpm},B:{targetBrightness}>\n"
         
-        time.sleep(POLL_RATE_SEC)
+        try:
+            serPort.write(payloadStr.encode('utf-8'))
+            print(f"Transmitted: {payloadStr.strip()}")
+        except Exception as e:
+            print(f"Serial Error: {e}")
+        
+        time.sleep(2.0)
 
 if __name__ == "__main__":
     main()
