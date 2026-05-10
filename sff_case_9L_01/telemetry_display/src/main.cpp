@@ -190,7 +190,7 @@ void loop() {
     lastPwrState = pwrState;
   }
 
-  // Ambient Polling Section
+  // Ambient Polling Section (Perfectly Column Aligned)
   if (sensorsInitialized && (millis() - lastSensorRead >= SENSOR_INTERVAL)) {
     sensors_event_t humidity, temp;
     aht.getEvent(&humidity, &temp);
@@ -203,15 +203,17 @@ void loop() {
     lcd.setTextColor(TFT_GREEN, TFT_BLACK); 
 
     if (IS_LANDSCAPE) {
-      lcd.setCursor(10, divY + 15);
-      lcd.printf("AMB: %02d C", (int)caseTemp);
-      lcd.setCursor(120, divY + 15);
-      lcd.printf("HUM: %02d%%", (int)caseHum);
+      lcd.setCursor(10, divY + 15);  lcd.print("AMB:");
+      lcd.setCursor(60, divY + 15);  lcd.printf("%02d C", (int)caseTemp);
+      
+      lcd.setCursor(140, divY + 15); lcd.print("HUM:");
+      lcd.setCursor(190, divY + 15); lcd.printf("%02d%%", (int)caseHum);
     } else {
-      lcd.setCursor(10, divY + 15); 
-      lcd.printf("AMB: %02d C", (int)caseTemp);
-      lcd.setCursor(10, divY + 45); 
-      lcd.printf("HUM: %02d%%", (int)caseHum);
+      lcd.setCursor(10, divY + 15);  lcd.print("AMB:");
+      lcd.setCursor(60, divY + 15);  lcd.printf("%02d C", (int)caseTemp);
+      
+      lcd.setCursor(10, divY + 45);  lcd.print("HUM:");
+      lcd.setCursor(60, divY + 45);  lcd.printf("%02d%%", (int)caseHum);
     }
   }
 
@@ -254,44 +256,68 @@ void loop() {
         }
 
         lcd.setTextSize(2);
+        
+        // Dynamic Telemetry Rendering (Perfectly Column Aligned)
         if (IS_LANDSCAPE) {
-          lcd.setCursor(10, 15);
+          int col1_L = 10;   // Left Column Labels
+          int col1_V = 96;   // Left Column Values
+          int col2_L = 170;  // Right Column Labels
+          int col2_V = 256;  // Right Column Values
+
+          // Row 1
           lcd.setTextColor(getTempColor(t), TFT_BLACK);
-          lcd.printf("CPU: %02d C  ", t);
-          lcd.setCursor(170, 15);
+          lcd.setCursor(col1_L, 15); lcd.print("CPU:");
+          lcd.setCursor(col1_V, 15); lcd.printf("%02d C  ", t);
+          
           lcd.setTextColor(getTempColor(g_t), TFT_BLACK);
-          lcd.printf("GPU: %02d C  ", g_t);
-          lcd.setCursor(10, 50);
+          lcd.setCursor(col2_L, 15); lcd.print("GPU:");
+          lcd.setCursor(col2_V, 15); lcd.printf("%02d C  ", g_t);
+
+          // Row 2
           lcd.setTextColor(getFanColor(r), TFT_BLACK);
-          lcd.printf("FAN: %04d  ", r);
-          lcd.setCursor(170, 50);
+          lcd.setCursor(col1_L, 50); lcd.print("FAN:");
+          lcd.setCursor(col1_V, 50); lcd.printf("%04d  ", r);
+          
           lcd.setTextColor(getTempColor(m), TFT_BLACK);
-          lcd.printf("SSD: %02d C  ", m);
-          lcd.setCursor(10, 85);
+          lcd.setCursor(col2_L, 50); lcd.print("SSD:");
+          lcd.setCursor(col2_V, 50); lcd.printf("%02d C  ", m);
+
+          // Row 3
           lcd.setTextColor(getLoadColor(c_l), TFT_BLACK);
-          lcd.printf("CPU L: %02d%%  ", c_l);
-          lcd.setCursor(170, 85);
+          lcd.setCursor(col1_L, 85); lcd.print("CPU L:");
+          lcd.setCursor(col1_V, 85); lcd.printf("%02d%%  ", c_l);
+          
           lcd.setTextColor(getLoadColor(g_l), TFT_BLACK);
-          lcd.printf("GPU L: %02d%%  ", g_l);
+          lcd.setCursor(col2_L, 85); lcd.print("GPU L:");
+          lcd.setCursor(col2_V, 85); lcd.printf("%02d%%  ", g_l);
+          
         } else {
-          lcd.setCursor(10, 15);
+          int col_L = 10;   // Portrait Labels
+          int col_V = 96;   // Portrait Values Aligned
+
           lcd.setTextColor(getTempColor(t), TFT_BLACK);
-          lcd.printf("CPU: %02d C  ", t);
-          lcd.setCursor(10, 50);
+          lcd.setCursor(col_L, 15);  lcd.print("CPU:");
+          lcd.setCursor(col_V, 15);  lcd.printf("%02d C  ", t);
+
           lcd.setTextColor(getTempColor(g_t), TFT_BLACK);
-          lcd.printf("GPU: %02d C  ", g_t);
-          lcd.setCursor(10, 85);
+          lcd.setCursor(col_L, 50);  lcd.print("GPU:");
+          lcd.setCursor(col_V, 50);  lcd.printf("%02d C  ", g_t);
+
           lcd.setTextColor(getFanColor(r), TFT_BLACK);
-          lcd.printf("FAN: %04d  ", r);
-          lcd.setCursor(10, 120);
+          lcd.setCursor(col_L, 85);  lcd.print("FAN:");
+          lcd.setCursor(col_V, 85);  lcd.printf("%04d  ", r);
+
           lcd.setTextColor(getTempColor(m), TFT_BLACK);
-          lcd.printf("SSD: %02d C  ", m);
-          lcd.setCursor(10, 155);
+          lcd.setCursor(col_L, 120); lcd.print("SSD:");
+          lcd.setCursor(col_V, 120); lcd.printf("%02d C  ", m);
+
           lcd.setTextColor(getLoadColor(c_l), TFT_BLACK);
-          lcd.printf("CPU L: %02d%%  ", c_l);
-          lcd.setCursor(10, 190);
+          lcd.setCursor(col_L, 155); lcd.print("CPU L:");
+          lcd.setCursor(col_V, 155); lcd.printf("%02d%%  ", c_l);
+
           lcd.setTextColor(getLoadColor(g_l), TFT_BLACK);
-          lcd.printf("GPU L: %02d%%  ", g_l);
+          lcd.setCursor(col_L, 190); lcd.print("GPU L:");
+          lcd.setCursor(col_V, 190); lcd.printf("%02d%%  ", g_l);
         }
       }
     }
