@@ -1,13 +1,13 @@
 # Project: 9L SFF PC Build & Migration
 **Author:** Aniva
-**Date:** May 2, 2026
+**Date:** May 9, 2026
 
 ## 1. Project Overview & Strategic Objectives
 Migration of hardware from an A01 Aluminum Mini-ITX chassis to a custom ~9L SFF enclosure. 
 * **Commercial Productization:** Engineer and market a distinct, proprietary SFF chassis design (CAD files and fabricated units). 
 * **Visual Optimization (120Hz):** Achieve native 4K @ 120Hz output for an 85" Samsung display.
 * **Hardware Acceleration:** Maximize Insta360 Studio timeline scrubbing and export encoding performance.
-* **Hardware Telemetry Integration:** Deploy a microcontroller-driven front panel display for real-time thermal monitoring.
+* **Hardware Telemetry Integration:** Deploy a microcontroller-driven front panel display for real-time thermal monitoring and hardware status indication.
 
 ## 2. Custom Fabrication Details
 * **Chassis Material (Re-Printed):** Polymaker PC-PBT. Scrapped ABS to permanently eliminate toxic styrene off-gassing (VOCs) under ambient internal temperatures exceeding 50°C. 
@@ -39,33 +39,45 @@ Migration of hardware from an A01 Aluminum Mini-ITX chassis to a custom ~9L SFF 
 ## 5. Telemetry & Hardware Monitoring Architecture
 * **Microcontroller:** Waveshare ESP32-C6 Development Board. Pinout mapped for hardware revision v0.2 (Backlight: GPIO 22, Data/Command: GPIO 15).
 * **Firmware Stack:** C++ compiled via PlatformIO. Utilizes `LovyanGFX` for hardware-native ST7789 display driving with a 34px X-axis offset memory correction. 
+* **Ambient Sensors:** I2C bus deployed on GPIO 0 (SDA) and GPIO 1 (SCL) supporting AHT20 (Humidity/Temp) and BMP280 (Pressure/Temp) modules.
 
 ### 5.1. Host Infrastructure & Deployment
 * **Hardware Monitoring Engine:** LibreHardwareMonitor (LHM). 
-    * Localhost Web Server explicitly enabled on Port `8085`[cite: 8].
-    * HTTP Basic Authentication active (Credentials: `sffmonitor` / `sffmonitor`)[cite: 8].
+    * Localhost Web Server explicitly enabled on Port `8085`.
+    * HTTP Basic Authentication active (Credentials: `sffmonitor` / `sffmonitor`).
 * **Python Environment:** Global Windows Python 3.14 installation required. Executed via the `pythonw.exe` background launcher.
-* **Host Daemon:** Python script (`telemetry_stream.py`) querying the LHM JSON namespace. Extracts CPU/GPU metrics and transmits formatted binary strings (e.g., `<T:XX,R:XXXX,G:XX,M:XX,C:XX,L:XX>`) to the ESP32-C6 over the virtual USB CDC COM port every 2.0s[cite: 8].
+* **Host Daemon:** Python script (`telemetry_stream.py`) querying the LHM JSON namespace. Extracts CPU/GPU metrics and transmits formatted binary strings (e.g., `<T:XX,R:XXXX,G:XX,M:XX,C:XX,L:XX>`) to the ESP32-C6 over the virtual USB CDC COM port every 2.0s.
 
 ### 5.2. Automated Service Deployment (Production)
-To ensure the telemetry stream is resilient and starts automatically without a visible console window, the system uses a **Windows Scheduled Task**[cite: 8].
+To ensure the telemetry stream is resilient and starts automatically without a visible console window, the system uses a **Windows Scheduled Task**.
 
 * **Task Name:** `SFF_Telemetry_Daemon`.
-* **Execution Identity:** Runs with **Highest Privileges** (Admin) to ensure compatibility with ASRock motherboard sensor access[cite: 8].
-* **Trigger:** Executes at **User Logon**[cite: 8].
+* **Execution Identity:** Runs with **Highest Privileges** (Admin) to ensure compatibility with ASRock motherboard sensor access.
+* **Trigger:** Executes at **User Logon**.
 
 **Management Commands (Administrator PowerShell):**
-* **Install/Update:** `powershell -ExecutionPolicy Bypass -File ".\install_task.ps1"`[cite: 8].
-* **Manual Start:** `Start-ScheduledTask -TaskName "SFF_Telemetry_Daemon"`[cite: 8].
-* **Check Status:** `Get-ScheduledTask -TaskName "SFF_Telemetry_Daemon"`[cite: 8].
+* **Install/Update:** `powershell -ExecutionPolicy Bypass -File ".\install_task.ps1"`.
+* **Manual Start:** `Start-ScheduledTask -TaskName "SFF_Telemetry_Daemon"`.
+* **Check Status:** `Get-ScheduledTask -TaskName "SFF_Telemetry_Daemon"`.
 
-### 5.3. Hardware Zero-Latency Disk IO Indicator
-To bypass the 2.0s polling delay of the software daemon, disk activity is wired directly from the motherboard HDD LED header to the ESP32-C6 via a DAOKI PC817 2-Channel Optocoupler Isolation Board.
-*   **Motherboard `HDD LED +`** -> Module `IN1`
-*   **Motherboard `HDD LED -`** -> Module `G` (Input Side)
-*   **ESP32 `3.3V`** -> Module `V1`
-*   **ESP32 `GND`** -> Module `G` (Output Side)
-*   **ESP32 `GPIO 4`** -> Module `O1` (Output Signal)
+### 5.3. Hardware Zero-Latency Status Indicators (Opto-Isolation)
+To bypass the 2.0s polling delay of the software daemon, disk activity and power states are wired directly from the motherboard headers to the ESP32-C6 via hardware optocouplers.
+
+**Architectural Note (Isolation Flaw):** Initial deployment of a dual-channel DAOKI PC817 board failed due to a shared input ground plane causing cross-talk between the constant `PWR-` ground and the switched `HDD-` ground. The architecture strictly requires two physically isolated single-channel PC817 optocouplers to maintain galvanic isolation and prevent logic hijacking. Isolation jumpers must be removed.
+
+**Module 1: HDD Activity (Switched Ground Logic)**
+* **Motherboard `HDLED+`** -> Module 1 `IN`
+* **Motherboard `HDLED-`** -> Module 1 `G` (Input Side)
+* **ESP32 `3.3V`** -> Module 1 `V1`
+* **ESP32 `GND`** -> Module 1 `G` (Output Side)
+* **ESP32 `GPIO 4`** -> Module 1 `OUT`
+
+**Module 2: System Power (Constant Ground Logic)**
+* **Motherboard `PLED+`** -> Module 2 `IN`
+* **Motherboard `PLED-`** -> Module 2 `G` (Input Side)
+* **ESP32 `3.3V`** -> Module 2 `V1`
+* **ESP32 `GND`** -> Module 2 `G` (Output Side)
+* **ESP32 `GPIO 5`** -> Module 2 `OUT`
 
 ## 6. ESP32-C6 Source Code & Host Daemon
 Required execution paths and source code configurations for the telemetry array.
@@ -78,7 +90,7 @@ If the microcontroller is actively crashing, force Download Mode and execute the
 ```
 
 ### 6.2. PlatformIO Configuration (`platformio.ini`)
-The v0.2 hardware revision requires `dio` flash mode to prevent crashing, and explicit DTR/RTS assertion to wake up the internal USB CDC interface[cite: 8].
+The v0.2 hardware revision requires `dio` flash mode to prevent crashing, and explicit DTR/RTS assertion to wake up the internal USB CDC interface. Sensor libraries integrated for ambient monitoring.
 
 ```ini
 [env:esp32-c6-devkitc-1]
@@ -100,6 +112,8 @@ build_flags =
 
 lib_deps = 
     lovyan03/LovyanGFX@^1.1.16
+    adafruit/Adafruit AHTX0@^2.0.5
+    adafruit/Adafruit BMP280 Library@^2.6.8
 ```
 
 ### 6.3. Host Python Daemon (`telemetry_stream.py`)
@@ -219,25 +233,34 @@ if __name__ == "__main__":
 ```
 
 ### 6.4. Hardware Validation Firmware (`src/main.cpp`)
-Main rendering pipeline. Features landscape/portrait configuration, dynamic unified color coding based on thermal/load states, whitespace buffer padding to prevent ghosting, and hardware-level optocoupler interrupts for disk IO.
+Main rendering pipeline. Features landscape/portrait configuration, dynamic unified color coding based on thermal/load states, whitespace buffer padding to prevent ghosting, hardware-level optocoupler analog polling (`< 3000` ADC threshold) for PC logic parsing, and I2C integration.
 
 ```cpp
 #include <Arduino.h>
 #include <LovyanGFX.hpp>
+#include <Wire.h>
+#include <Adafruit_AHTX0.h>
+#include <Adafruit_BMP280.h>
 
+// --- Hardware Pin Definitions ---
 #define HDD_LED_PIN 4 
+#define PWR_LED_PIN 5 
+#define I2C_SDA_PIN 0
+#define I2C_SCL_PIN 1
 
 // --- Display Configuration ---
-// Set to true for Landscape, false for Portrait (USB on top)
 const bool IS_LANDSCAPE = false;
 
-class LGFX : public lgfx::LGFX_Device {
+// 1. Hardware Configuration Class
+class LGFX : public lgfx::LGFX_Device
+{
   lgfx::Panel_ST7789 _panel_instance;
   lgfx::Bus_SPI _bus_instance;
   lgfx::Light_PWM _light_instance;
 
 public:
-  LGFX(void) {
+  LGFX(void)
+  {
     {
       auto cfg = _bus_instance.config();
       cfg.spi_host = SPI2_HOST;
@@ -270,10 +293,25 @@ public:
   }
 };
 
+// 2. Global Instances & Variables
 LGFX lcd;
+Adafruit_AHTX0 aht;
+Adafruit_BMP280 bmp;
+
 String inputString = "";
 bool stringComplete = false;
 bool firstPayloadReceived = false;
+
+// Sensor Variables & Non-Blocking Timer
+float caseTemp = 0.0;
+float caseHum = 0.0;
+bool sensorsInitialized = false;
+unsigned long lastSensorRead = 0;
+const unsigned long SENSOR_INTERVAL = 5000;
+
+// Hardware LED State Tracking 
+int lastDiskState = -1;
+int lastPwrState = -1;
 
 // --- Unified Color Logic Helpers ---
 uint16_t getTempColor(int temp) {
@@ -294,7 +332,9 @@ uint16_t getFanColor(int rpm) {
   else return TFT_RED;
 }
 
-int getValueByTag(String data, String tag, char endChar) {
+// 3. Helper Function
+int getValueByTag(String data, String tag, char endChar)
+{
   int tagIndex = data.indexOf(tag);
   if (tagIndex == -1) return -1;
   int startIndex = tagIndex + tag.length();
@@ -303,9 +343,24 @@ int getValueByTag(String data, String tag, char endChar) {
   return data.substring(startIndex, endIndex).toInt();
 }
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
-  pinMode(HDD_LED_PIN, INPUT);
+  
+  pinMode(HDD_LED_PIN, INPUT_PULLUP);
+  pinMode(PWR_LED_PIN, INPUT_PULLUP);
+
+  Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
+  
+  if (aht.begin() && bmp.begin()) {
+    sensorsInitialized = true;
+    bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,
+                    Adafruit_BMP280::SAMPLING_X2,
+                    Adafruit_BMP280::SAMPLING_X16,
+                    Adafruit_BMP280::FILTER_X16,
+                    Adafruit_BMP280::STANDBY_MS_500);
+  }
+
   lcd.init();
   
   if (IS_LANDSCAPE) {
@@ -316,6 +371,7 @@ void setup() {
   
   lcd.setBrightness(128);
   lcd.fillScreen(TFT_BLACK);
+
   lcd.setTextColor(TFT_GREEN, TFT_BLACK);
   lcd.setTextSize(2);
   lcd.setCursor(10, 10);
@@ -323,27 +379,80 @@ void setup() {
   lcd.println("Awaiting Daemon...");
 }
 
-void loop() {
-  // 1. Hardware Disk IO
-  int diskState = digitalRead(HDD_LED_PIN);
-  int dotX = IS_LANDSCAPE ? 300 : 150; 
+void loop()
+{
+  // =================================================================
+  // 1. EVENT-DRIVEN HARDWARE LEDs
+  // =================================================================
+  pinMode(HDD_LED_PIN, INPUT_PULLUP);
+  pinMode(PWR_LED_PIN, INPUT_PULLUP);
+
+  int diskState = (analogRead(HDD_LED_PIN) < 3000) ? LOW : HIGH;
+  int pwrState  = (analogRead(PWR_LED_PIN) < 3000) ? LOW : HIGH;
   
-  if (diskState == LOW) {
-    lcd.fillCircle(dotX, 10, 5, TFT_GREEN);
-  } else {
-    lcd.fillCircle(dotX, 10, 5, TFT_BLACK);
+  if (pwrState != lastPwrState) {
+    int pwrDotX = IS_LANDSCAPE ? 280 : 130; 
+    if (pwrState == LOW) lcd.fillCircle(pwrDotX, 10, 5, TFT_BLUE); 
+    else lcd.fillCircle(pwrDotX, 10, 5, TFT_BLACK); 
+    lastPwrState = pwrState;
   }
 
-  // 2. Serial Ingestion
-  while (Serial.available()) {
+  if (diskState != lastDiskState) {
+    int hddDotX = IS_LANDSCAPE ? 300 : 150; 
+    if (diskState == LOW) lcd.fillCircle(hddDotX, 10, 5, TFT_GREEN); 
+    else lcd.fillCircle(hddDotX, 10, 5, TFT_BLACK); 
+    lastDiskState = diskState;
+  }
+
+  // =================================================================
+  // 2. NON-BLOCKING LOCAL SENSOR POLLING
+  // =================================================================
+  if (sensorsInitialized && (millis() - lastSensorRead >= SENSOR_INTERVAL)) {
+    sensors_event_t humidity, temp;
+    aht.getEvent(&humidity, &temp);
+    caseTemp = temp.temperature;
+    caseHum = humidity.relative_humidity;
+    lastSensorRead = millis();
+
+    lcd.setTextSize(2);
+    lcd.setTextColor(TFT_CYAN, TFT_BLACK);
+
+    if (firstPayloadReceived) {
+      if (IS_LANDSCAPE) {
+        lcd.setCursor(10, 140);
+        lcd.printf("AMB: %02d C  ", (int)caseTemp);
+        lcd.setCursor(170, 140);
+        lcd.printf("HUM: %02d%%  ", (int)caseHum);
+      } else {
+        lcd.setCursor(10, 260);
+        lcd.printf("AMB: %02d C  ", (int)caseTemp);
+        lcd.setCursor(10, 300);
+        lcd.printf("HUM: %02d%%  ", (int)caseHum);
+      }
+    } else {
+      if (IS_LANDSCAPE) {
+        lcd.setCursor(10, 60); 
+      } else {
+        lcd.setCursor(10, 80); 
+      }
+      lcd.printf("Case Amb: %02dC / %02d%%", (int)caseTemp, (int)caseHum);
+    }
+  }
+
+  // =================================================================
+  // 3. SERIAL INGESTION (PC Telemetry)
+  // =================================================================
+  while (Serial.available())
+  {
     char inChar = (char)Serial.read();
     inputString += inChar;
     if (inChar == '>') stringComplete = true;
   }
 
-  // 3. Payload Parsing
-  if (stringComplete) {
-    if (inputString.startsWith("<") && inputString.indexOf(">") > 0) {
+  if (stringComplete)
+  {
+    if (inputString.startsWith("<") && inputString.indexOf(">") > 0)
+    {
       int t = getValueByTag(inputString, "T:", ',');
       int r = getValueByTag(inputString, "R:", ',');
       int g_t = getValueByTag(inputString, "G:", ',');
@@ -351,15 +460,20 @@ void loop() {
       int c_l = getValueByTag(inputString, "C:", ','); 
       int g_l = getValueByTag(inputString, "L:", '>'); 
 
-      if (t != -1 && r != -1) {
-        if (!firstPayloadReceived) {
+      if (t != -1 && r != -1)
+      {
+        if (!firstPayloadReceived)
+        {
           lcd.fillScreen(TFT_BLACK);
+          lastDiskState = -1;
+          lastPwrState = -1;
           firstPayloadReceived = true;
         }
 
         lcd.setTextSize(2);
 
-        if (IS_LANDSCAPE) {
+        if (IS_LANDSCAPE) 
+        {
           lcd.setCursor(10, 20);
           lcd.setTextColor(getTempColor(t), TFT_BLACK);
           lcd.printf("CPU: %02d C  ", t);
@@ -383,7 +497,9 @@ void loop() {
           lcd.setCursor(170, 100);
           lcd.setTextColor(getLoadColor(g_l), TFT_BLACK);
           lcd.printf("GPU L: %02d%%  ", g_l);
-        } else {
+        } 
+        else 
+        {
           lcd.setCursor(10, 20);
           lcd.setTextColor(getTempColor(t), TFT_BLACK);
           lcd.printf("CPU: %02d C  ", t);

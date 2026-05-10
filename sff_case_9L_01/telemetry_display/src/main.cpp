@@ -11,7 +11,6 @@
 #define I2C_SCL_PIN 1
 
 // --- Display Configuration ---
-// Set to true for Landscape, false for Portrait (USB on top)
 const bool IS_LANDSCAPE = false;
 
 // 1. Hardware Configuration Class
@@ -70,9 +69,9 @@ float caseTemp = 0.0;
 float caseHum = 0.0;
 bool sensorsInitialized = false;
 unsigned long lastSensorRead = 0;
-const unsigned long SENSOR_INTERVAL = 5000; // Poll ambient every 5000ms
+const unsigned long SENSOR_INTERVAL = 5000;
 
-// Hardware LED State Tracking (Set to -1 to force an initial draw)
+// Hardware LED State Tracking 
 int lastDiskState = -1;
 int lastPwrState = -1;
 
@@ -110,16 +109,13 @@ void setup()
 {
   Serial.begin(115200);
   
-  // Initialize Optocoupler Inputs with internal pull-up resistors
   pinMode(HDD_LED_PIN, INPUT_PULLUP);
   pinMode(PWR_LED_PIN, INPUT_PULLUP);
 
-  // Initialize I2C Bus for Sensors
   Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
   
   if (aht.begin() && bmp.begin()) {
     sensorsInitialized = true;
-    // Set BMP280 to standard mode
     bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,
                     Adafruit_BMP280::SAMPLING_X2,
                     Adafruit_BMP280::SAMPLING_X16,
@@ -148,10 +144,13 @@ void setup()
 void loop()
 {
   // =================================================================
-  // 1. EVENT-DRIVEN HARDWARE LEDs (Zero Latency, Zero Spam)
+  // 1. EVENT-DRIVEN HARDWARE LEDs
   // =================================================================
-  int diskState = digitalRead(HDD_LED_PIN);
-  int pwrState = digitalRead(PWR_LED_PIN);
+  pinMode(HDD_LED_PIN, INPUT_PULLUP);
+  pinMode(PWR_LED_PIN, INPUT_PULLUP);
+
+  int diskState = (analogRead(HDD_LED_PIN) < 3000) ? LOW : HIGH;
+  int pwrState  = (analogRead(PWR_LED_PIN) < 3000) ? LOW : HIGH;
   
   if (pwrState != lastPwrState) {
     int pwrDotX = IS_LANDSCAPE ? 280 : 130; 
@@ -167,8 +166,8 @@ void loop()
     lastDiskState = diskState;
   }
 
- // =================================================================
-  // 2. NON-BLOCKING LOCAL SENSOR POLLING (Independent of PC)
+  // =================================================================
+  // 2. NON-BLOCKING LOCAL SENSOR POLLING
   // =================================================================
   if (sensorsInitialized && (millis() - lastSensorRead >= SENSOR_INTERVAL)) {
     sensors_event_t humidity, temp;
@@ -180,7 +179,6 @@ void loop()
     lcd.setTextSize(2);
     lcd.setTextColor(TFT_CYAN, TFT_BLACK);
 
-    // Only draw the standard UI if the PC has connected
     if (firstPayloadReceived) {
       if (IS_LANDSCAPE) {
         lcd.setCursor(10, 140);
@@ -193,9 +191,7 @@ void loop()
         lcd.setCursor(10, 300);
         lcd.printf("HUM: %02d%%  ", (int)caseHum);
       }
-    } 
-    // If waiting for the PC, draw the temps on the boot screen
-    else {
+    } else {
       if (IS_LANDSCAPE) {
         lcd.setCursor(10, 60); 
       } else {
@@ -231,11 +227,8 @@ void loop()
         if (!firstPayloadReceived)
         {
           lcd.fillScreen(TFT_BLACK);
-          
-          // Force LEDs to redraw over the newly wiped black screen
           lastDiskState = -1;
           lastPwrState = -1;
-          
           firstPayloadReceived = true;
         }
 
