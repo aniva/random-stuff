@@ -3,20 +3,8 @@
 #include <Wire.h>
 #include <Adafruit_AHTX0.h>
 #include <Adafruit_BMP280.h>
-#include "bitmaps.h" // Injects static hex arrays from local header
-
-// --- Hardware Pin Definitions ---
-#define HDD_LED_PIN 4 
-#define PWR_LED_PIN 5 
-#define I2C_SDA_PIN 0
-#define I2C_SCL_PIN 1
-
-// --- Custom Colors ---
-#define TFT_VIOLET lcd.color565(148, 0, 211)
-#define TFT_DARKGREY lcd.color565(80, 80, 80)
-
-// --- Display Configuration ---
-const bool IS_LANDSCAPE = false;
+#include "bitmaps.h" 
+#include "config.h" // Injects user configuration variables
 
 // 1. Hardware Configuration Class
 class LGFX : public lgfx::LGFX_Device
@@ -64,24 +52,26 @@ LGFX lcd;
 Adafruit_AHTX0 aht;
 Adafruit_BMP280 bmp;
 
+// --- Custom Colors ---
+#define tftViolet lcd.color565(148, 0, 211)
+#define tftDarkGrey lcd.color565(80, 80, 80)
+
+// --- State Machine Variables ---
+unsigned long lastPayloadTime = 0;
+bool isOnline = false;
+bool forceRedraw = true; 
+
+// --- System Variables ---
 String inputString = "";
 bool stringComplete = false;
-bool firstPayloadReceived = false;
 
 float caseTemp = 0.0;
 float caseHum = 0.0;
 bool sensorsInitialized = false;
 unsigned long lastSensorRead = 0;
-const unsigned long SENSOR_INTERVAL = 5000;
 
 int lastDiskState = -1;
 int lastPwrState = -1;
-
-// --- State Timeout Logic ---
-unsigned long lastPayloadTime = 0;
-const unsigned long PAYLOAD_TIMEOUT = 10000; 
-const int DEFAULT_BRIGHTNESS = 128;
-bool signalLost = false;
 
 // --- Color Helpers ---
 uint16_t getTempColor(int temp) {
@@ -89,7 +79,7 @@ uint16_t getTempColor(int temp) {
   else if (temp < 65) return TFT_YELLOW;
   else if (temp < 80) return TFT_ORANGE;
   else if (temp < 90) return TFT_RED;
-  else return TFT_VIOLET;
+  else return tftViolet;
 }
 
 uint16_t getLoadColor(int load) {
@@ -97,7 +87,7 @@ uint16_t getLoadColor(int load) {
   else if (load < 65) return TFT_YELLOW;
   else if (load < 85) return TFT_ORANGE;
   else if (load < 95) return TFT_RED;
-  else return TFT_VIOLET;
+  else return tftViolet;
 }
 
 uint16_t getFanColor(int rpm) {
@@ -105,14 +95,16 @@ uint16_t getFanColor(int rpm) {
   else if (rpm < 1500) return TFT_YELLOW;
   else if (rpm < 2000) return TFT_ORANGE;
   else if (rpm < 2500) return TFT_RED;
-  else return TFT_VIOLET;
+  else return tftViolet;
 }
 
+// --- Layout Generator ---
 void drawBaseLayout() {
   lcd.fillScreen(TFT_BLACK);
-  int divY = IS_LANDSCAPE ? 125 : 240;
-  int width = IS_LANDSCAPE ? 320 : 172;
+  int divY = isLandscape ? 125 : 240;
+  int width = isLandscape ? 320 : 172;
   lcd.drawFastHLine(0, divY, width, TFT_GREEN);
+  
   lastDiskState = -1;
   lastPwrState = -1;
   lastSensorRead = 0; 
@@ -128,11 +120,11 @@ int getValueByTag(String data, String tag, char endChar) {
 }
 
 void setup() {
-  Serial.begin(115200);
-  pinMode(HDD_LED_PIN, INPUT_PULLUP);
-  pinMode(PWR_LED_PIN, INPUT_PULLUP);
-  Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
-  
+  Serial.begin(serialBaudRate);
+  pinMode(hddLedPin, INPUT_PULLUP);
+  pinMode(pwrLedPin, INPUT_PULLUP);
+  Wire.begin(i2cSdaPin, i2cSclPin);
+
   if (aht.begin() && bmp.begin()) {
     sensorsInitialized = true;
     bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,
@@ -143,169 +135,145 @@ void setup() {
   }
 
   lcd.init();
-  if (IS_LANDSCAPE) lcd.setRotation(1); 
-  else lcd.setRotation(2); 
-  
-  lcd.setBrightness(DEFAULT_BRIGHTNESS);
-  drawBaseLayout();
+  if (isLandscape) lcd.setRotation(1);
+  else lcd.setRotation(2);
 
-  // Draw Initial Top-Section Status
-  lcd.setTextColor(TFT_GREEN, TFT_BLACK);
-  lcd.setTextSize(2);
-  lcd.setCursor(10, 15);
-  lcd.print("SYS NOMINAL");
-  lcd.setCursor(10, 40);
-  lcd.setTextSize(1);
-  lcd.print("> Awaiting Daemon...");
-
-  // Draw High-Res 128x128 Vault Boy
-  if (IS_LANDSCAPE) {
-    lcd.drawBitmap(96, 0, epd_bitmap_pipboy, 128, 128, TFT_GREEN); 
-  } else {
-    lcd.drawBitmap(22, 85, epd_bitmap_pipboy, 128, 128, TFT_GREEN); 
-  }
+  lcd.setBrightness(bootBrightness); 
+  isOnline = false;
+  forceRedraw = true;
 }
 
 void loop() {
-  // Re-assert pull-up logic for hardware indicators
-  pinMode(HDD_LED_PIN, INPUT_PULLUP);
-  pinMode(PWR_LED_PIN, INPUT_PULLUP);
+  unsigned long currentMillis = millis();
 
-  int diskState = (analogRead(HDD_LED_PIN) < 3000) ? LOW : HIGH;
-  int pwrState  = (analogRead(PWR_LED_PIN) < 3000) ? LOW : HIGH;
-  
+  // =================================================================
+  // 1. HARDWARE & AMBIENT SENSORS (Always Active)
+  // =================================================================
+  pinMode(hddLedPin, INPUT_PULLUP);
+  pinMode(pwrLedPin, INPUT_PULLUP);
+
+  int diskState = (analogRead(hddLedPin) < ledThreshold) ? LOW : HIGH;
+  int pwrState = (analogRead(pwrLedPin) < ledThreshold) ? LOW : HIGH;
+
   if (diskState != lastDiskState) {
-    uint16_t hddColor = (diskState == LOW) ? TFT_GREEN : TFT_DARKGREY;
-    int hddX = IS_LANDSCAPE ? 240 : 130; 
-    int hddY = IS_LANDSCAPE ? 132 : 245;
+    uint16_t hddColor = (diskState == LOW) ? TFT_GREEN : tftDarkGrey;
+    int hddX = isLandscape ? 240 : 130;
+    int hddY = isLandscape ? 132 : 245;
     lcd.drawBitmap(hddX, hddY, epd_bitmap_hdd, 32, 32, hddColor, (uint16_t)TFT_BLACK);
     lastDiskState = diskState;
   }
 
   if (pwrState != lastPwrState) {
-    uint16_t pwrColor = (pwrState == LOW) ? TFT_GREEN : TFT_DARKGREY;
-    int pwrX = IS_LANDSCAPE ? 280 : 130; 
-    int pwrY = IS_LANDSCAPE ? 132 : 282; 
+    uint16_t pwrColor = (pwrState == LOW) ? TFT_GREEN : tftDarkGrey;
+    int pwrX = isLandscape ? 280 : 130;
+    int pwrY = isLandscape ? 132 : 282;
     lcd.drawBitmap(pwrX, pwrY, epd_bitmap_pwr, 32, 32, pwrColor, (uint16_t)TFT_BLACK);
     lastPwrState = pwrState;
   }
 
-  // Ambient Polling Section (Perfectly Column Aligned)
-  if (sensorsInitialized && (millis() - lastSensorRead >= SENSOR_INTERVAL)) {
+  if (sensorsInitialized && (currentMillis - lastSensorRead >= sensorPollMs)) {
     sensors_event_t humidity, temp;
     aht.getEvent(&humidity, &temp);
     caseTemp = temp.temperature;
     caseHum = humidity.relative_humidity;
-    lastSensorRead = millis();
+    lastSensorRead = currentMillis;
 
-    int divY = IS_LANDSCAPE ? 125 : 240;
+    int divY = isLandscape ? 125 : 240;
     lcd.setTextSize(2);
-    lcd.setTextColor(TFT_GREEN, TFT_BLACK); 
+    lcd.setTextColor(TFT_GREEN, TFT_BLACK);
 
-    if (IS_LANDSCAPE) {
-      lcd.setCursor(10, divY + 15);  lcd.print("AMB:");
-      lcd.setCursor(60, divY + 15);  lcd.printf("%02d C", (int)caseTemp);
-      
+    if (isLandscape) {
+      lcd.setCursor(10, divY + 15); lcd.print("AMB:");
+      lcd.setCursor(60, divY + 15); lcd.printf("%02d C", (int)caseTemp);
       lcd.setCursor(140, divY + 15); lcd.print("HUM:");
       lcd.setCursor(190, divY + 15); lcd.printf("%02d%%", (int)caseHum);
     } else {
-      lcd.setCursor(10, divY + 15);  lcd.print("AMB:");
-      lcd.setCursor(60, divY + 15);  lcd.printf("%02d C", (int)caseTemp);
-      
-      lcd.setCursor(10, divY + 45);  lcd.print("HUM:");
-      lcd.setCursor(60, divY + 45);  lcd.printf("%02d%%", (int)caseHum);
+      lcd.setCursor(10, divY + 15); lcd.print("AMB:");
+      lcd.setCursor(60, divY + 15); lcd.printf("%02d C", (int)caseTemp);
+      lcd.setCursor(10, divY + 45); lcd.print("HUM:");
+      lcd.setCursor(60, divY + 45); lcd.printf("%02d%%", (int)caseHum);
     }
   }
 
-  // Fallback Brightness Logic (Host disconnected/Timeout)
-  if (firstPayloadReceived && (millis() - lastPayloadTime > PAYLOAD_TIMEOUT)) {
-      if (!signalLost) {
-          lcd.setBrightness(DEFAULT_BRIGHTNESS);
-          signalLost = true;
-      }
-  }
-
-  // Serial Telemetry Ingestion
+  // =================================================================
+  // 2. SERIAL BUFFER SANITIZATION
+  // =================================================================
   while (Serial.available()) {
     char inChar = (char)Serial.read();
-    inputString += inChar;
+    if (inChar == '<') { inputString = "<"; }
+    else if (inChar != '\n' && inChar != '\r') { inputString += inChar; }
     if (inChar == '>') stringComplete = true;
   }
 
+  // =================================================================
+  // 3. PAYLOAD PARSING & ONLINE RENDERER
+  // =================================================================
   if (stringComplete) {
     if (inputString.startsWith("<") && inputString.indexOf(">") > 0) {
       int t = getValueByTag(inputString, "T:", ',');
       int r = getValueByTag(inputString, "R:", ',');
       int g_t = getValueByTag(inputString, "G:", ',');
       int m = getValueByTag(inputString, "M:", ',');
-      int c_l = getValueByTag(inputString, "C:", ','); 
-      int g_l = getValueByTag(inputString, "L:", ','); 
-      int b = getValueByTag(inputString, "B:", '>'); 
+      int c_l = getValueByTag(inputString, "C:", ',');
+      int g_l = getValueByTag(inputString, "L:", ',');
+      int b = getValueByTag(inputString, "B:", '>');
 
       if (t != -1 && r != -1) {
-        lastPayloadTime = millis();
-        signalLost = false;
-
-        if (b != -1) {
-            lcd.setBrightness(b);
+        lastPayloadTime = currentMillis; 
+        
+        if (!isOnline) {
+          isOnline = true;
+          forceRedraw = true; 
         }
 
-        if (!firstPayloadReceived) {
+        if (b != -1) lcd.setBrightness(b);
+
+        if (forceRedraw) {
           drawBaseLayout();
-          firstPayloadReceived = true;
+          forceRedraw = false;
         }
 
         lcd.setTextSize(2);
-        
-        // Dynamic Telemetry Rendering (Perfectly Column Aligned)
-        if (IS_LANDSCAPE) {
-          int col1_L = 10;   // Left Column Labels
-          int col1_V = 96;   // Left Column Values
-          int col2_L = 170;  // Right Column Labels
-          int col2_V = 256;  // Right Column Values
-
-          // Row 1
+        if (isLandscape) {
+          int col1_L = 10, col1_V = 96, col2_L = 170, col2_V = 256;
+          
           lcd.setTextColor(getTempColor(t), TFT_BLACK);
           lcd.setCursor(col1_L, 15); lcd.print("CPU:");
           lcd.setCursor(col1_V, 15); lcd.printf("%02d C  ", t);
-          
+
           lcd.setTextColor(getTempColor(g_t), TFT_BLACK);
           lcd.setCursor(col2_L, 15); lcd.print("GPU:");
           lcd.setCursor(col2_V, 15); lcd.printf("%02d C  ", g_t);
 
-          // Row 2
           lcd.setTextColor(getFanColor(r), TFT_BLACK);
           lcd.setCursor(col1_L, 50); lcd.print("FAN:");
           lcd.setCursor(col1_V, 50); lcd.printf("%04d  ", r);
-          
+
           lcd.setTextColor(getTempColor(m), TFT_BLACK);
           lcd.setCursor(col2_L, 50); lcd.print("SSD:");
           lcd.setCursor(col2_V, 50); lcd.printf("%02d C  ", m);
 
-          // Row 3
           lcd.setTextColor(getLoadColor(c_l), TFT_BLACK);
           lcd.setCursor(col1_L, 85); lcd.print("CPU L:");
           lcd.setCursor(col1_V, 85); lcd.printf("%02d%%  ", c_l);
-          
+
           lcd.setTextColor(getLoadColor(g_l), TFT_BLACK);
           lcd.setCursor(col2_L, 85); lcd.print("GPU L:");
           lcd.setCursor(col2_V, 85); lcd.printf("%02d%%  ", g_l);
-          
         } else {
-          int col_L = 10;   // Portrait Labels
-          int col_V = 96;   // Portrait Values Aligned
+          int col_L = 10, col_V = 96;
 
           lcd.setTextColor(getTempColor(t), TFT_BLACK);
-          lcd.setCursor(col_L, 15);  lcd.print("CPU:");
-          lcd.setCursor(col_V, 15);  lcd.printf("%02d C  ", t);
+          lcd.setCursor(col_L, 15); lcd.print("CPU:");
+          lcd.setCursor(col_V, 15); lcd.printf("%02d C  ", t);
 
           lcd.setTextColor(getTempColor(g_t), TFT_BLACK);
-          lcd.setCursor(col_L, 50);  lcd.print("GPU:");
-          lcd.setCursor(col_V, 50);  lcd.printf("%02d C  ", g_t);
+          lcd.setCursor(col_L, 50); lcd.print("GPU:");
+          lcd.setCursor(col_V, 50); lcd.printf("%02d C  ", g_t);
 
           lcd.setTextColor(getFanColor(r), TFT_BLACK);
-          lcd.setCursor(col_L, 85);  lcd.print("FAN:");
-          lcd.setCursor(col_V, 85);  lcd.printf("%04d  ", r);
+          lcd.setCursor(col_L, 85); lcd.print("FAN:");
+          lcd.setCursor(col_V, 85); lcd.printf("%04d  ", r);
 
           lcd.setTextColor(getTempColor(m), TFT_BLACK);
           lcd.setCursor(col_L, 120); lcd.print("SSD:");
@@ -323,5 +291,32 @@ void loop() {
     }
     inputString = "";
     stringComplete = false;
+  }
+
+  // =================================================================
+  // 4. OFFLINE STANDBY RENDERER & TIMEOUT LOGIC
+  // =================================================================
+  if (isOnline && (currentMillis - lastPayloadTime > offlineTimeoutMs)) {
+    isOnline = false;
+    forceRedraw = true; 
+    lcd.setBrightness(standbyBrightness); 
+  }
+
+  if (!isOnline && forceRedraw) {
+    drawBaseLayout();
+    
+    lcd.setTextColor(TFT_GREEN, TFT_BLACK);
+    lcd.setTextSize(2);
+    lcd.setCursor(10, 15);
+    lcd.print("SYS NOMINAL");
+    
+    lcd.setCursor(10, 40);
+    lcd.setTextSize(1);
+    lcd.print("> Awaiting Daemon...");
+
+    if (isLandscape) lcd.drawBitmap(96, 0, epd_bitmap_pipboy, 128, 128, TFT_GREEN);
+    else lcd.drawBitmap(22, 85, epd_bitmap_pipboy, 128, 128, TFT_GREEN);
+    
+    forceRedraw = false;
   }
 }

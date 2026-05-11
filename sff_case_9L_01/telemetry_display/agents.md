@@ -1,6 +1,6 @@
 # Project: 9L SFF PC Build & Migration
 **Author:** Aniva
-**Date:** May 10, 2026
+**Date:** May 11, 2026
 
 ## 1. Project Overview & Strategic Objectives
 Migration of hardware from an A01 Aluminum Mini-ITX chassis to a custom ~9L SFF enclosure. 
@@ -19,25 +19,25 @@ Migration of hardware from an A01 Aluminum Mini-ITX chassis to a custom ~9L SFF 
 | Component | Specification |
 | :--- | :--- |
 | **Motherboard** | ASRock B760M-ITX/D4 WiFi (UEFI Version 11.02) |
-| **Processor** | Intel Core i3-12100 (Pending Migration to i5-14400) |
+| **Processor** | Intel Core i5-14400 |
 | **CPU Cooler** | Noctua NH-L9i-17xx Premium Low-Profile (Brown) |
 | **Memory** | 32GB (2x16GB) DDR4 @ 3200 MHz (XMP Profile Active) |
 | **Storage** | 512GB Samsung PM991 NVMe M.2 / 2x 1TB Crucial MX500 SATA SSD |
 | **GPU** | NVIDIA GeForce GTX 1650 SUPER (ASUS ROG STRIX 4G) |
 | **Power Supply** | FSP Dagger Pro 850W SFX 3.1 |
-| **Telemetry Display** | Waveshare ESP32-C6 1.47inch Touch Display (172×320, v0.2 Hardware Revision) |
+| **Telemetry Display** | Waveshare ESP32-C6 1.47inch Touch Display (172×320, CH343 UART Bridge) |
 
 ### 3.1. Hardware Acceleration Pipeline (Insta360 Studio)
 * **Primary Graphics Adapter (UEFI):** `[PCIE1]`. Forces 120Hz display output and NVENC hardware encoding.
 * **IGPU Multi-Monitor (UEFI):** `[Enabled]`. Exposes Intel Quick Sync Video (QSV) for HEVC/H.265 timeline decoding.
 
 ## 4. Pending Actions
-* [ ] **Physical CPU Migration:** Execute swap to Intel Core i5-14400. Adjust PL1/PL2 power limits.
 * [ ] **GPU Upgrade Execution:** Procure a sub-252mm NVIDIA GPU optimized for Insta360 Studio and native 120Hz display output via HDMI 2.1.
+* [ ] **NVMe Thermal Mitigation:** Procure and install a low-profile (12mm) aluminum block heatsink (e.g., Thermalright M.2 2280 TYPE AB) to reduce Samsung PM991 ambient heat soak.
 
 ## 5. Telemetry & Hardware Monitoring Architecture
 * **Microcontroller:** Waveshare ESP32-C6 Development Board. 
-* **Firmware Stack:** C++ compiled via PlatformIO. Uses `LovyanGFX` for ST7789 display driving. UI follows a RobCo/Fallout terminal aesthetic (Green on Black) featuring a 128x128px Vault Boy boot logo and 32x32px dynamic hardware icons. Data arrays are explicitly offloaded to a dedicated header file (`bitmaps.h`) to optimize compilation.
+* **Firmware Stack:** C++ compiled via PlatformIO. Uses `LovyanGFX` for ST7789 display driving. UI follows a RobCo/Fallout terminal aesthetic (Green on Black) featuring a 128x128px Vault Boy boot logo and 32x32px dynamic hardware icons. Data arrays are explicitly offloaded to a dedicated header file (`bitmaps.h`) to optimize compilation. Hardware parameters are isolated in a centralized `config.h` configuration header.
 * **Ambient Sensors:** I2C bus deployed on GPIO 0 (SDA) and GPIO 1 (SCL) supporting AHT20 and BMP280 modules.
 
 ### 5.1. Hardware Zero-Latency Status Indicators (Opto-Isolation)
@@ -50,143 +50,74 @@ To bypass software polling delays, disk activity and power states are wired dire
 * **Hardware Monitoring Engine:** LibreHardwareMonitor (LHM) with Web Server on Port `8085`.
 * **Host Daemon:** Python script (`telemetry_stream.py`) queries LHM JSON. 
 * **Dynamic Dimming:** The host daemon utilizes the `astral` library to calculate local sunset/sunrise for Mississauga, ON. The script appends a brightness target (`B:255` or `B:30`) to the serial payload based on configurable hour offsets from the solar events.
-* **Service Deployment:** Executed silently via Windows Scheduled Task (`SFF_Telemetry_Daemon`) running with Highest Privileges at User Logon.
+* **Service Deployment:** Executed silently via Windows Scheduled Task (`SFF_Telemetry_Daemon`) running with Highest Privileges at User Logon. The task utilizes an explicit `PT30S` (30-second) delay to bypass USB enumeration race conditions. The task targets an isolated PlatformIO python environment to prevent global dependency conflicts.
 
-### 5.3. Icon & Bitmap Generation Protocol
-Follow these strict procedures to generate and ingest custom UI assets (e.g., Pip-Boy, HDD, PWR) into the firmware:
-1. **Asset Generation:** Produce the raw icon utilizing an LLM image generator. Specify exactly two colors: **Green and Black**.
-2. **Dimensional Bounds:** Ensure the icon is a perfect square matching the target canvas size (e.g., `128x128` for the boot logo, `32x32` for hardware icons).
-3. **Manual Correction:** If necessary, execute a final crop using a local image editor to ensure the asset perfectly fits the dimensional limits.
-4. **Data Conversion:** Upload the asset to [image2cpp](https://javl.github.io/image2cpp/).
-5. **Tool Configuration:** Apply the following parameters strictly. *(Note: Do NOT check "Invert image colors". Native green/black generation is processed directly.)*
-   * **Canvas size:** `128 x 128` (or `32 x 32`)
-   * **Background color:** `Black`
-   * **Invert image colors:** `[UNCHECKED]`
-   * **Brightness / alpha threshold:** `128`
-   * **Scaling:** `scale to fit, keeping proportions`
-   * **Center image:** `horizontally [CHECKED]`, `vertically [CHECKED]`
-   * **Code output format:** `Arduino code`
-   * **Draw mode:** `Horizontal - 1 bit per pixel`
-6. **Ingestion:** Generate the code, copy the resulting array, and paste it into the designated variable within the `src/bitmaps.h` file.
+### 5.3. Hardware Quirks & Serial Protocol
+* **CH343 UART Bridge Auto-Reset Circuit:** The Waveshare ESP32-C6 uses a CH343 chip where the DTR and RTS lines are physically wired to the ESP32's `EN` and `IO0` pins. Asserting these lines high triggers the auto-reset circuit, throwing the chip into Download Mode and halting the CPU.
+* **PySerial "Instant Open" Trap:** In Python, passing the COM port directly into the `serial.Serial()` constructor instantaneously opens the port with default `DTR=True`. The serial object MUST be instantiated empty, the DTR/RTS lines explicitly disabled, and then manually opened via `.open()`.
+* **Serial Buffer Poisoning:** The Python daemon appends a newline (`\n`) to transmit payloads. The ESP32 C++ parser is explicitly programmed to flush the `inputString` buffer upon receiving the `<` character and ignore all invisible carriage returns to prevent offset string corruption.
+* **Graceful Standby State Machine:** Due to the CH343 UART bridge supplying constant 5V standby power even when the host PC shuts down, standard `!Serial` hardware watchdogs induce boot-loops. The firmware implements an 8000ms software stopwatch. If data transmission ceases, the UI gracefully downgrades to a dim, offline aesthetic while maintaining real-time ambient sensor reads.
 
 ## 6. Code Infrastructure (Truncated Reference)
-*Note: Boilerplate rendering logic, WMI fallbacks, and large hex arrays are omitted for brevity.*
 
 ### 6.1. Python Host Daemon (`telemetry_stream.py`)
-**Dependencies:** `pip install astral pytz wmi pyserial`
+Features isolated instantiation to prevent DTR hardware spikes.
 
 ```python
-from astral import LocationInfo
-from astral.sun import sun
-import pytz
-
-# --- Dimming Configuration ---
-cityData = LocationInfo("Mississauga", "Canada", "America/Toronto", 43.5890, -79.6441)
-xOffsetHrs = 1.0  # Hours AFTER sunset to start dimming
-yOffsetHrs = 1.0  # Hours BEFORE sunrise to stop dimming
-brightnessDay = 255
-brightnessNight = 30
-
-def getTargetBrightness():
-    tz = pytz.timezone(cityData.timezone)
-    now = datetime.now(tz)
-    try:
-        solarData = sun(cityData.observer, date=now.date(), tzinfo=tz)
-        dimStart = solarData["sunset"] + timedelta(hours=xOffsetHrs)
-        dimStop = solarData["sunrise"] - timedelta(hours=yOffsetHrs)
-        
-        if dimStop <= now <= dimStart: return brightnessDay
-        else: return brightnessNight
-    except Exception: return brightnessDay
-
-# [ ... TRUNCATED LHM PARSING & SERIAL INIT ... ]
-
 def main():
-    # [ ... TRUNCATED ... ]
-    while True:
-        # [ ... TRUNCATED DATA FETCH ... ]
-        targetBrightness = getTargetBrightness()
-        payloadStr = f"<T:{cpuTemp},R:{fanRpm},G:{gpuTemp},M:{nvmeTemp},C:{cpuLoad},L:{gpuLoad},B:{targetBrightness}>\n"
-        serPort.write(payloadStr.encode('utf-8'))
-        time.sleep(2.0)
-```
+    serPort = None
+    while serPort is None:
+        try:
+            # CRITICAL FIX: Instantiate without opening to prevent DTR spike
+            serPort = serial.Serial()
+            serPort.port = COM_PORT
+            serPort.baudrate = BAUD_RATE
+            serPort.timeout = 1
+            serPort.dtr = False
+            serPort.rts = False
+            serPort.open() # Safely open with transistors disabled
+        except serial.SerialException:
+            time.sleep(5.0)
 
-### 6.2. ESP32 Asset Header (`src/bitmaps.h`)
-Isolates UI data to prevent compiler bloat.
+    # [ ... TRUNCATED WMI/HTTP SENSOR PARSING ... ]
+'''
 
-```cpp
-#pragma once
-#include <Arduino.h>
+### 6.2. PowerShell Diagnostic Injector (`test_payload.ps1`)
+Used strictly for bypassing the Python daemon to validate hardware display rendering.
 
-// Replace with arrays generated via image2cpp (Invert UNCHECKED)
-const unsigned char epd_bitmap_pipboy [] PROGMEM = { /* ... */ };
-const unsigned char epd_bitmap_hdd [] PROGMEM = { /* ... */ };
-const unsigned char epd_bitmap_pwr [] PROGMEM = { /* ... */ };
-```
+'''powershell
+try {
+    $serial = New-Object System.IO.Ports.SerialPort $Port, 115200, 'None', 8, 'One'
+    # CRITICAL: Bypasses the CH343 Auto-Reset Transistor Circuit
+    $serial.DtrEnable = $false
+    $serial.RtsEnable = $false
+    
+    $serial.Open()
+    Start-Sleep -Milliseconds 500  
+    $serial.Write($payload)        
+    Start-Sleep -Milliseconds 100 
+    $serial.Close()
+}
+catch { Write-Error "Target port $Port is locked." }
+'''
 
 ### 6.3. ESP32 Firmware (`src/main.cpp`)
-Main rendering loop includes a 10-second payload timeout to revert brightness if the host daemon disconnects, and typecasted background rendering for 0-latency icons.
+Main rendering loop isolates invisible characters and integrates the offline stopwatch.
 
-```cpp
-#include "bitmaps.h"
-// [ ... TRUNCATED LOVYANGFX INIT & SENSOR SETUP ... ]
-
-unsigned long lastPayloadTime = 0;
-const unsigned long PAYLOAD_TIMEOUT = 10000; 
-const int DEFAULT_BRIGHTNESS = 128;
-bool signalLost = false;
-
-void loop() {
-  // 1. Hardware LED Optocoupler Parsing
-  int diskState = (analogRead(HDD_LED_PIN) < 3000) ? LOW : HIGH;
-  int pwrState  = (analogRead(PWR_LED_PIN) < 3000) ? LOW : HIGH;
-  
-  if (diskState != lastDiskState) {
-    uint16_t hddColor = (diskState == LOW) ? TFT_GREEN : TFT_DARKGREY;
-    // Explicit uint16_t cast prevents compiler template mismatch
-    lcd.drawBitmap(130, 245, epd_bitmap_hdd, 32, 32, hddColor, (uint16_t)TFT_BLACK);
-    lastDiskState = diskState;
-  }
-  // [ ... TRUNCATED PWR ICON RENDERING ... ]
-
-  // 2. Local Ambient Sensors
-  // [ ... TRUNCATED I2C AHT/BMP POLLING ... ]
-
-  // 3. Fallback Brightness Logic
-  if (firstPayloadReceived && (millis() - lastPayloadTime > PAYLOAD_TIMEOUT)) {
-      if (!signalLost) {
-          lcd.setBrightness(DEFAULT_BRIGHTNESS);
-          signalLost = true;
-      }
-  }
-
-  // 4. Serial Ingestion
+'''cpp
+  // 1. Serial Ingestion & Buffer Sanitization
   while (Serial.available()) {
     char inChar = (char)Serial.read();
-    inputString += inChar;
+    if (inChar == '<') { inputString = "<"; } 
+    else if (inChar != '\n' && inChar != '\r') { inputString += inChar; }
     if (inChar == '>') stringComplete = true;
   }
 
-  if (stringComplete) {
-    if (inputString.startsWith("<") && inputString.indexOf(">") > 0) {
-      int t = getValueByTag(inputString, "T:", ',');
-      int b = getValueByTag(inputString, "B:", '>'); 
-
-      if (t != -1) {
-        lastPayloadTime = millis();
-        signalLost = false;
-
-        if (b != -1) lcd.setBrightness(b);
-
-        if (!firstPayloadReceived) {
-          drawBaseLayout(); // Wipes boot screen
-          firstPayloadReceived = true;
-        }
-        // [ ... TRUNCATED TELEMETRY RENDERING ... ]
-      }
-    }
-    inputString = "";
-    stringComplete = false;
+  // 2. State Timeout Logic
+  unsigned long currentMillis = millis();
+  if (isOnline && (currentMillis - lastPayloadTime > offlineTimeoutMs)) {
+    isOnline = false;
+    forceRedraw = true; 
+    lcd.setBrightness(standbyBrightness); // Reverts to PIP-Boy aesthetic
   }
-}
-```
+'''
