@@ -32,6 +32,18 @@ flowchart TD
     AppData -->|Loads Profile on Restart| Studio(QIDI Studio)
 ```
 
+### Examples in Action
+
+Here is what it looks like when QIDI Studio successfully loads the agent-generated profiles via the symbolic links. Notice the `(vscode)` suffix which is used to instantly identify profiles that were built by the AI agent rather than the stock system profiles.
+
+#### 1. Filament Profiles
+![List of filament profiles showing the agent-generated profile with the (vscode) suffix](images/qidi_studio_screenshot_01.png)
+*When selecting a filament profile for the printer, the agent-generated profiles appear directly in the drop-down menu.*
+
+#### 2. Process Settings
+![Process settings showing a custom PC case profile with specific infill patterns](images/qidi_studio_screenshot_02.png)
+*This is an example of an agent-generated Process profile. Instead of manually configuring settings like the infill pattern for every large structural print, you can have the agent generate a reusable "PC Case" profile.*
+
 ## Project Structure
 
 * **`prepare_windows.cmd`**: The Windows batch script that links your AppData folder to this repository.
