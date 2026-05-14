@@ -42,6 +42,7 @@ Here is what it looks like when QIDI Studio successfully loads the agent-generat
 
 #### 2. Process Settings
 ![Process settings showing a custom PC case profile with specific infill patterns](images/qidi_studio_screenshot_02.png)
+
 *This is an example of an agent-generated Process profile. Instead of manually configuring settings like the infill pattern for every large structural print, you can have the agent generate a reusable "PC Case" profile.*
 
 ## Project Structure
