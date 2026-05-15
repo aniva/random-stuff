@@ -13,7 +13,7 @@ import pytz
 # --- GLOBAL SYSTEM CONFIGURATION ---
 # ==============================================================================
 
-COM_PORT = "COM3"
+COM_PORT = "COM4"
 BAUD_RATE = 115200
 POLL_INTERVAL = 3.0  
 
@@ -28,8 +28,8 @@ LONGITUDE = -79.6441
 
 DIM_DELAY_HRS = 1.0      
 WAKE_ADVANCE_HRS = 1.0   
-BRIGHTNESS_DAY = 255     
-BRIGHTNESS_NIGHT = 30    
+BRIGHTNESS_DAY = 100 # max 255 for 8-bit brightness     
+BRIGHTNESS_NIGHT = 10 # originlly 30    
 
 # ==============================================================================
 # --- SYSTEM LOGIC ---
