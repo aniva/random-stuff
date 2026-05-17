@@ -32,8 +32,8 @@
 ```mermaid
 graph TD
     subgraph SFF Motherboard
-        MB_HDD[Front Panel: HDD LED Header]
-        MB_PWR[Front Panel: PWR LED Header]
+        MB_HDD[Front Panel: HDD LED]
+        MB_PWR[Front Panel: PWR LED]
     end
 
     subgraph Optical Isolation Layer
@@ -41,37 +41,48 @@ graph TD
         OPTO_PWR[PC817 Module 2]
     end
 
+    subgraph Power Distribution
+        V33_SPLICE((3.3V Splice Array))
+        GND_SPLICE((GND Splice Array))
+    end
+
     subgraph ESP32-C6 Telemetry Controller
-        V33[3.3V VCC]
+        V33[3.3V VCC Out]
         GND[Common GND]
         GPIO4[GPIO 4: HDD State IN]
         GPIO5[GPIO 5: PWR State IN]
-        GPIO6[GPIO 6: I2C-0 SDA]
-        GPIO7[GPIO 7: I2C-0 SCL]
-        GPIO2[GPIO 2: I2C-1 SDA]
-        GPIO3[GPIO 3: I2C-1 SCL]
+        GPIO6_7[GPIO 6 & 7: I2C-0]
+        GPIO2_3[GPIO 2 & 3: I2C-1]
     end
 
     subgraph Ambient Sensing Array
-        AHT1[AHT20 Primary - Address 0x38]
-        AHT2[AHT20 Secondary - Address 0x38]
+        AHT1[AHT20 Primary]
+        AHT2[AHT20 Secondary]
     end
 
+    %% High Voltage / Isolated Side
     MB_HDD -->|HDD+ / HDD-| OPTO_HDD
     MB_PWR -->|PWR+ / PWR-| OPTO_PWR
 
-    OPTO_HDD -->|Signal Out / GND| GPIO4
-    OPTO_PWR -->|Signal Out / GND| GPIO5
+    %% Main Power Trunks (ESP32 to Splice Blocks)
+    V33 ==>|Supply Trunk| V33_SPLICE
+    GND ==>|Ground Trunk| GND_SPLICE
 
-    AHT1 -.->|SDA| GPIO6
-    AHT1 -.->|SCL| GPIO7
-    AHT1 ==>|VCC| V33
-    AHT1 ==>|GND| GND
+    %% 3.3V Distribution
+    V33_SPLICE -->|VCC| AHT1
+    V33_SPLICE -->|VCC| AHT2
 
-    AHT2 -.->|SDA| GPIO2
-    AHT2 -.->|SCL| GPIO3
-    AHT2 ==>|VCC| V33
-    AHT2 ==>|GND| GND
+    %% GND Distribution (Logic Side)
+    GND_SPLICE -->|Logic GND| OPTO_HDD
+    GND_SPLICE -->|Logic GND| OPTO_PWR
+    GND_SPLICE -->|GND| AHT1
+    GND_SPLICE -->|GND| AHT2
+
+    %% Signal Routing
+    OPTO_HDD -->|Signal| GPIO4
+    OPTO_PWR -->|Signal| GPIO5
+    AHT1 -.->|SDA / SCL| GPIO6_7
+    AHT2 -.->|SDA / SCL| GPIO2_3
 ```
 
 ## 3. Mandatory UEFI Parameters
