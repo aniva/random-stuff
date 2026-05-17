@@ -20,12 +20,12 @@
 ### 2.1. GPIO Pin Routing Matrix
 | Component | Signal | ESP32-C6 GPIO | Motherboard Source |
 | :--- | :--- | :--- | :--- |
-| **AHT20 (Primary)** | I2C-0 SDA | GPIO 6 | N/A |
-| **AHT20 (Primary)** | I2C-0 SCL | GPIO 7 | N/A |
-| **AHT20 (Ambient)** | I2C-1 SDA | GPIO 2 | N/A |
-| **AHT20 (Ambient)** | I2C-1 SCL | GPIO 3 | N/A |
-| **PC817 (Opto 1)** | Digital IN | GPIO 4 | Front Panel: HDD LED (+/-) |
-| **PC817 (Opto 2)** | Digital IN | GPIO 5 | Front Panel: PWR LED (+/-) |
+| **AHT20 (Primary)** | I2C-0 SDA | GP0 | N/A |
+| **AHT20 (Primary)** | I2C-0 SCL | GP1 | N/A |
+| **AHT20 (Ambient)** | I2C-1 SDA | GP2 | N/A |
+| **AHT20 (Ambient)** | I2C-1 SCL | GP3 | N/A |
+| **PC817 (Opto 1)** | Digital IN | GP4 | Front Panel: HDD LED (+/-) |
+| **PC817 (Opto 2)** | Digital IN | GP5 | Front Panel: PWR LED (+/-) |
 
 ### 2.2. Hardware Interconnect Schematic
 
@@ -49,10 +49,10 @@ graph TD
     subgraph ESP32-C6 Telemetry Controller
         V33[3.3V VCC Out]
         GND[Common GND]
-        GPIO4[GPIO 4: HDD State IN]
-        GPIO5[GPIO 5: PWR State IN]
-        GPIO6_7[GPIO 6 & 7: I2C-0]
-        GPIO2_3[GPIO 2 & 3: I2C-1]
+        GPIO4[GP4: HDD State IN]
+        GPIO5[GP5: PWR State IN]
+        GPIO0_1[GP0 & GP1: I2C-0]
+        GPIO2_3[GP2 & GP3: I2C-1]
     end
 
     subgraph Ambient Sensing Array
@@ -81,7 +81,7 @@ graph TD
     %% Signal Routing
     OPTO_HDD -->|Signal| GPIO4
     OPTO_PWR -->|Signal| GPIO5
-    AHT1 -.->|SDA / SCL| GPIO6_7
+    AHT1 -.->|SDA / SCL| GPIO0_1
     AHT2 -.->|SDA / SCL| GPIO2_3
 ```
 
