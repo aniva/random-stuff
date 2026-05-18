@@ -15,13 +15,19 @@ const long serialBaudRate = 115200;
 
 // --- Timing & Thresholds ---
 const unsigned long offlineTimeoutMs = 8000; // Milliseconds before reverting to Pip-Boy
-const unsigned long sensorPollMs = 5000;     // Milliseconds between AHT20/BMP280 reads
+const unsigned long sensorPollMs = 5000;     // Milliseconds between ambient reads
 const int ledThreshold = 3000;               // Optocoupler analog trigger threshold
 
 // --- Hardware Pinouts ---
 const int hddLedPin = 4;
 const int pwrLedPin = 5;
-const int i2cSdaPin = 0;
-const int i2cSclPin = 1;
+
+// Front Ambient Sensor (AHT20 Primary)
+const int i2c0SdaPin = 0;
+const int i2c0SclPin = 1;
+
+// Rear Ambient Sensor (AHT20 Secondary)
+const int i2c1SdaPin = 2;
+const int i2c1SclPin = 3;
 
 #endif

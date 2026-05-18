@@ -2,7 +2,6 @@
 #include <LovyanGFX.hpp>
 #include <Wire.h>
 #include <Adafruit_AHTX0.h>
-#include <Adafruit_BMP280.h>
 #include "bitmaps.h" 
 #include "config.h" // Injects user configuration variables
 
@@ -49,8 +48,8 @@ public:
 };
 
 LGFX lcd;
-Adafruit_AHTX0 aht;
-Adafruit_BMP280 bmp;
+Adafruit_AHTX0 ahtFront;
+Adafruit_AHTX0 ahtRear;
 
 // --- Custom Colors ---
 #define tftViolet lcd.color565(148, 0, 211)
@@ -67,8 +66,10 @@ bool stringComplete = false;
 
 float caseTemp = 0.0;
 float caseHum = 0.0;
-bool sensorsInitialized = false;
+bool frontInit = false;
+bool rearInit = false;
 unsigned long lastSensorRead = 0;
+String activeSensorLabel = "AMB:";
 
 int lastDiskState = -1;
 int lastPwrState = -1;
@@ -123,16 +124,13 @@ void setup() {
   Serial.begin(serialBaudRate);
   pinMode(hddLedPin, INPUT_PULLUP);
   pinMode(pwrLedPin, INPUT_PULLUP);
-  Wire.begin(i2cSdaPin, i2cSclPin);
+  
+  // Initialize Dual I2C Buses
+  Wire.begin(i2c0SdaPin, i2c0SclPin);
+  Wire1.begin(i2c1SdaPin, i2c1SclPin);
 
-  if (aht.begin() && bmp.begin()) {
-    sensorsInitialized = true;
-    bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,
-                    Adafruit_BMP280::SAMPLING_X2,
-                    Adafruit_BMP280::SAMPLING_X16,
-                    Adafruit_BMP280::FILTER_X16,
-                    Adafruit_BMP280::STANDBY_MS_500);
-  }
+  if (ahtFront.begin(&Wire)) frontInit = true;
+  if (ahtRear.begin(&Wire1)) rearInit = true;
 
   lcd.init();
   if (isLandscape) lcd.setRotation(1);
@@ -171,27 +169,55 @@ void loop() {
     lastPwrState = pwrState;
   }
 
-  if (sensorsInitialized && (currentMillis - lastSensorRead >= sensorPollMs)) {
-    sensors_event_t humidity, temp;
-    aht.getEvent(&humidity, &temp);
-    caseTemp = temp.temperature;
-    caseHum = humidity.relative_humidity;
+  if ((frontInit || rearInit) && (currentMillis - lastSensorRead >= sensorPollMs)) {
+    float tempF = -999.0, humF = 0.0;
+    float tempR = -999.0, humR = 0.0;
+    
+    // Read Front Sensor
+    if (frontInit) {
+      sensors_event_t humidity, temp;
+      ahtFront.getEvent(&humidity, &temp);
+      tempF = temp.temperature;
+      humF = humidity.relative_humidity;
+    }
+    
+    // Read Rear Sensor
+    if (rearInit) {
+      sensors_event_t humidity, temp;
+      ahtRear.getEvent(&humidity, &temp);
+      tempR = temp.temperature;
+      humR = humidity.relative_humidity;
+    }
+    
+    // Logic: Identify and store the maximum temperature value
+    if (tempF >= tempR && tempF != -999.0) {
+      caseTemp = tempF;
+      caseHum = humF;
+      activeSensorLabel = "AMB F:";
+    } else if (rearInit && tempR != -999.0) {
+      caseTemp = tempR;
+      caseHum = humR;
+      activeSensorLabel = "AMB R:";
+    }
+
     lastSensorRead = currentMillis;
 
     int divY = isLandscape ? 125 : 240;
     lcd.setTextSize(2);
     lcd.setTextColor(TFT_GREEN, TFT_BLACK);
 
+    // Adjusted cursor positions (shifted to 95) to prevent overlapping 
+    // with the 6-character activeSensorLabel
     if (isLandscape) {
-      lcd.setCursor(10, divY + 15); lcd.print("AMB:");
-      lcd.setCursor(60, divY + 15); lcd.printf("%02d C", (int)caseTemp);
-      lcd.setCursor(140, divY + 15); lcd.print("HUM:");
-      lcd.setCursor(190, divY + 15); lcd.printf("%02d%%", (int)caseHum);
+      lcd.setCursor(10, divY + 15); lcd.print(activeSensorLabel);
+      lcd.setCursor(95, divY + 15); lcd.printf("%02d C", (int)caseTemp);
+      lcd.setCursor(160, divY + 15); lcd.print("HUM:");
+      lcd.setCursor(215, divY + 15); lcd.printf("%02d%%", (int)caseHum);
     } else {
-      lcd.setCursor(10, divY + 15); lcd.print("AMB:");
-      lcd.setCursor(60, divY + 15); lcd.printf("%02d C", (int)caseTemp);
+      lcd.setCursor(10, divY + 15); lcd.print(activeSensorLabel);
+      lcd.setCursor(95, divY + 15); lcd.printf("%02d C", (int)caseTemp);
       lcd.setCursor(10, divY + 45); lcd.print("HUM:");
-      lcd.setCursor(60, divY + 45); lcd.printf("%02d%%", (int)caseHum);
+      lcd.setCursor(95, divY + 45); lcd.printf("%02d%%", (int)caseHum);
     }
   }
 
