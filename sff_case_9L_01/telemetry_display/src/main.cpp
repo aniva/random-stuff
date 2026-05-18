@@ -3,7 +3,7 @@
 #include <Wire.h>
 #include <Adafruit_AHTX0.h>
 #include "bitmaps.h" 
-#include "config.h" // Injects user configuration variables
+#include "config.h" 
 
 // 1. Hardware Configuration Class
 class LGFX : public lgfx::LGFX_Device
@@ -125,12 +125,13 @@ void setup() {
   pinMode(hddLedPin, INPUT_PULLUP);
   pinMode(pwrLedPin, INPUT_PULLUP);
   
-  // Initialize Dual I2C Buses
+  // 1. Route hardware bus to Front Sensor pins & initialize
   Wire.begin(i2c0SdaPin, i2c0SclPin);
-  Wire1.begin(i2c1SdaPin, i2c1SclPin);
-
   if (ahtFront.begin(&Wire)) frontInit = true;
-  if (ahtRear.begin(&Wire1)) rearInit = true;
+
+  // 2. Route hardware bus to Rear Sensor pins & initialize
+  Wire.begin(i2c1SdaPin, i2c1SclPin);
+  if (ahtRear.begin(&Wire)) rearInit = true;
 
   lcd.init();
   if (isLandscape) lcd.setRotation(1);
@@ -144,9 +145,6 @@ void setup() {
 void loop() {
   unsigned long currentMillis = millis();
 
-  // =================================================================
-  // 1. HARDWARE & AMBIENT SENSORS (Always Active)
-  // =================================================================
   pinMode(hddLedPin, INPUT_PULLUP);
   pinMode(pwrLedPin, INPUT_PULLUP);
 
@@ -169,20 +167,25 @@ void loop() {
     lastPwrState = pwrState;
   }
 
+  // =================================================================
+  // I2C BUS HOPPING LOGIC
+  // =================================================================
   if ((frontInit || rearInit) && (currentMillis - lastSensorRead >= sensorPollMs)) {
     float tempF = -999.0, humF = 0.0;
     float tempR = -999.0, humR = 0.0;
     
-    // Read Front Sensor
+    // Hop bus to Front Sensor
     if (frontInit) {
+      Wire.begin(i2c0SdaPin, i2c0SclPin); 
       sensors_event_t humidity, temp;
       ahtFront.getEvent(&humidity, &temp);
       tempF = temp.temperature;
       humF = humidity.relative_humidity;
     }
     
-    // Read Rear Sensor
+    // Hop bus to Rear Sensor
     if (rearInit) {
+      Wire.begin(i2c1SdaPin, i2c1SclPin);
       sensors_event_t humidity, temp;
       ahtRear.getEvent(&humidity, &temp);
       tempR = temp.temperature;
@@ -206,8 +209,6 @@ void loop() {
     lcd.setTextSize(2);
     lcd.setTextColor(TFT_GREEN, TFT_BLACK);
 
-    // Adjusted cursor positions (shifted to 95) to prevent overlapping 
-    // with the 6-character activeSensorLabel
     if (isLandscape) {
       lcd.setCursor(10, divY + 15); lcd.print(activeSensorLabel);
       lcd.setCursor(95, divY + 15); lcd.printf("%02d C", (int)caseTemp);
@@ -222,7 +223,7 @@ void loop() {
   }
 
   // =================================================================
-  // 2. SERIAL BUFFER SANITIZATION
+  // SERIAL & DISPLAY LOGIC 
   // =================================================================
   while (Serial.available()) {
     char inChar = (char)Serial.read();
@@ -231,9 +232,6 @@ void loop() {
     if (inChar == '>') stringComplete = true;
   }
 
-  // =================================================================
-  // 3. PAYLOAD PARSING & ONLINE RENDERER
-  // =================================================================
   if (stringComplete) {
     if (inputString.startsWith("<") && inputString.indexOf(">") > 0) {
       int t = getValueByTag(inputString, "T:", ',');
@@ -319,9 +317,6 @@ void loop() {
     stringComplete = false;
   }
 
-  // =================================================================
-  // 4. OFFLINE STANDBY RENDERER & TIMEOUT LOGIC
-  // =================================================================
   if (isOnline && (currentMillis - lastPayloadTime > offlineTimeoutMs)) {
     isOnline = false;
     forceRedraw = true; 
