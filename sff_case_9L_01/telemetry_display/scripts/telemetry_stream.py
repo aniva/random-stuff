@@ -71,9 +71,11 @@ def fetchHttpTelemetry(metrics):
                     elif "/gpu" in hw_type and "gpu core" in name:
                         metrics['gpu_temp'] = val
                     elif "/nvme" in hw_type or "/ssd" in hw_type or "/hdd" in hw_type:
-                        if "temperature" in name or "composite" in name:
-                            if val_int > int(metrics['ssd_temp']):
-                                metrics['ssd_temp'] = val
+                        # CRITICAL: Exclude static threshold limits
+                        if "warning" not in name and "critical" not in name:
+                            if "temperature" in name or "composite" in name:
+                                if val_int > int(metrics['ssd_temp']):
+                                    metrics['ssd_temp'] = val
                 elif "%" in val_str:
                     if "/intelcpu" in hw_type and "cpu total" in name:
                         metrics['cpu_load'] = val
@@ -146,9 +148,11 @@ def main():
                         elif "/gpu" in identifier and "gpu core" in sName:
                             metrics['gpu_temp'] = val
                         elif "/nvme" in identifier or "/ssd" in identifier or "/hdd" in identifier:
-                            if "temperature" in sName or "composite" in sName:
-                                if val_int > int(metrics['ssd_temp']):
-                                    metrics['ssd_temp'] = val
+                            # CRITICAL: Exclude static threshold limits
+                            if "warning" not in sName and "critical" not in sName:
+                                if "temperature" in sName or "composite" in sName:
+                                    if val_int > int(metrics['ssd_temp']):
+                                        metrics['ssd_temp'] = val
                                     
                     elif sType == "load":
                         if "/intelcpu" in identifier and "cpu total" in sName:

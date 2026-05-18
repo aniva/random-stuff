@@ -153,7 +153,7 @@ void loop() {
 
   if (diskState != lastDiskState) {
     uint16_t hddColor = (diskState == LOW) ? TFT_GREEN : tftDarkGrey;
-    int hddX = isLandscape ? 240 : 130;
+    int hddX = isLandscape ? 240 : 140; 
     int hddY = isLandscape ? 132 : 245;
     lcd.drawBitmap(hddX, hddY, epd_bitmap_hdd, 32, 32, hddColor, (uint16_t)TFT_BLACK);
     lastDiskState = diskState;
@@ -161,7 +161,7 @@ void loop() {
 
   if (pwrState != lastPwrState) {
     uint16_t pwrColor = (pwrState == LOW) ? TFT_GREEN : tftDarkGrey;
-    int pwrX = isLandscape ? 280 : 130;
+    int pwrX = isLandscape ? 280 : 140; 
     int pwrY = isLandscape ? 132 : 282;
     lcd.drawBitmap(pwrX, pwrY, epd_bitmap_pwr, 32, 32, pwrColor, (uint16_t)TFT_BLACK);
     lastPwrState = pwrState;
@@ -211,14 +211,14 @@ void loop() {
 
     if (isLandscape) {
       lcd.setCursor(10, divY + 15); lcd.print(activeSensorLabel);
-      lcd.setCursor(95, divY + 15); lcd.printf("%02d C", (int)caseTemp);
+      lcd.setCursor(95, divY + 15); lcd.printf("%02d C  ", (int)caseTemp);
       lcd.setCursor(160, divY + 15); lcd.print("HUM:");
-      lcd.setCursor(215, divY + 15); lcd.printf("%02d%%", (int)caseHum);
+      lcd.setCursor(215, divY + 15); lcd.printf("%02d%%  ", (int)caseHum);
     } else {
-      lcd.setCursor(10, divY + 15); lcd.print(activeSensorLabel);
-      lcd.setCursor(95, divY + 15); lcd.printf("%02d C", (int)caseTemp);
-      lcd.setCursor(10, divY + 45); lcd.print("HUM:");
-      lcd.setCursor(95, divY + 45); lcd.printf("%02d%%", (int)caseHum);
+      lcd.setCursor(5, divY + 15); lcd.print(activeSensorLabel);
+      lcd.setCursor(80, divY + 15); lcd.printf("%02d C  ", (int)caseTemp);
+      lcd.setCursor(5, divY + 45); lcd.print("HUM:");
+      lcd.setCursor(80, divY + 45); lcd.printf("%02d%%  ", (int)caseHum);
     }
   }
 
@@ -257,59 +257,60 @@ void loop() {
           forceRedraw = false;
         }
 
+        // --- SHIFTED Y-COORDINATES ---
         lcd.setTextSize(2);
         if (isLandscape) {
           int col1_L = 10, col1_V = 96, col2_L = 170, col2_V = 256;
           
           lcd.setTextColor(getTempColor(t), TFT_BLACK);
-          lcd.setCursor(col1_L, 15); lcd.print("CPU:");
-          lcd.setCursor(col1_V, 15); lcd.printf("%02d C  ", t);
+          lcd.setCursor(col1_L, 25); lcd.print("CPU:");
+          lcd.setCursor(col1_V, 25); lcd.printf("%02d C  ", t);
 
           lcd.setTextColor(getTempColor(g_t), TFT_BLACK);
-          lcd.setCursor(col2_L, 15); lcd.print("GPU:");
-          lcd.setCursor(col2_V, 15); lcd.printf("%02d C  ", g_t);
+          lcd.setCursor(col2_L, 25); lcd.print("GPU:");
+          lcd.setCursor(col2_V, 25); lcd.printf("%02d C  ", g_t);
 
           lcd.setTextColor(getFanColor(r), TFT_BLACK);
-          lcd.setCursor(col1_L, 50); lcd.print("FAN:");
-          lcd.setCursor(col1_V, 50); lcd.printf("%04d  ", r);
+          lcd.setCursor(col1_L, 60); lcd.print("FAN:");
+          lcd.setCursor(col1_V, 60); lcd.printf("%04d  ", r);
 
           lcd.setTextColor(getTempColor(m), TFT_BLACK);
-          lcd.setCursor(col2_L, 50); lcd.print("SSD:");
-          lcd.setCursor(col2_V, 50); lcd.printf("%02d C  ", m);
+          lcd.setCursor(col2_L, 60); lcd.print("SSD:");
+          lcd.setCursor(col2_V, 60); lcd.printf("%02d C  ", m);
 
           lcd.setTextColor(getLoadColor(c_l), TFT_BLACK);
-          lcd.setCursor(col1_L, 85); lcd.print("CPU L:");
-          lcd.setCursor(col1_V, 85); lcd.printf("%02d%%  ", c_l);
+          lcd.setCursor(col1_L, 95); lcd.print("CPU L:");
+          lcd.setCursor(col1_V, 95); lcd.printf("%02d%%  ", c_l);
 
           lcd.setTextColor(getLoadColor(g_l), TFT_BLACK);
-          lcd.setCursor(col2_L, 85); lcd.print("GPU L:");
-          lcd.setCursor(col2_V, 85); lcd.printf("%02d%%  ", g_l);
+          lcd.setCursor(col2_L, 95); lcd.print("GPU L:");
+          lcd.setCursor(col2_V, 95); lcd.printf("%02d%%  ", g_l);
         } else {
           int col_L = 10, col_V = 96;
 
           lcd.setTextColor(getTempColor(t), TFT_BLACK);
-          lcd.setCursor(col_L, 15); lcd.print("CPU:");
-          lcd.setCursor(col_V, 15); lcd.printf("%02d C  ", t);
+          lcd.setCursor(col_L, 30); lcd.print("CPU:");
+          lcd.setCursor(col_V, 30); lcd.printf("%02d C  ", t);
 
           lcd.setTextColor(getTempColor(g_t), TFT_BLACK);
-          lcd.setCursor(col_L, 50); lcd.print("GPU:");
-          lcd.setCursor(col_V, 50); lcd.printf("%02d C  ", g_t);
+          lcd.setCursor(col_L, 65); lcd.print("GPU:");
+          lcd.setCursor(col_V, 65); lcd.printf("%02d C  ", g_t);
 
           lcd.setTextColor(getFanColor(r), TFT_BLACK);
-          lcd.setCursor(col_L, 85); lcd.print("FAN:");
-          lcd.setCursor(col_V, 85); lcd.printf("%04d  ", r);
+          lcd.setCursor(col_L, 100); lcd.print("FAN:");
+          lcd.setCursor(col_V, 100); lcd.printf("%04d  ", r);
 
           lcd.setTextColor(getTempColor(m), TFT_BLACK);
-          lcd.setCursor(col_L, 120); lcd.print("SSD:");
-          lcd.setCursor(col_V, 120); lcd.printf("%02d C  ", m);
+          lcd.setCursor(col_L, 135); lcd.print("SSD:");
+          lcd.setCursor(col_V, 135); lcd.printf("%02d C  ", m);
 
           lcd.setTextColor(getLoadColor(c_l), TFT_BLACK);
-          lcd.setCursor(col_L, 155); lcd.print("CPU L:");
-          lcd.setCursor(col_V, 155); lcd.printf("%02d%%  ", c_l);
+          lcd.setCursor(col_L, 170); lcd.print("CPU L:");
+          lcd.setCursor(col_V, 170); lcd.printf("%02d%%  ", c_l);
 
           lcd.setTextColor(getLoadColor(g_l), TFT_BLACK);
-          lcd.setCursor(col_L, 190); lcd.print("GPU L:");
-          lcd.setCursor(col_V, 190); lcd.printf("%02d%%  ", g_l);
+          lcd.setCursor(col_L, 205); lcd.print("GPU L:");
+          lcd.setCursor(col_V, 205); lcd.printf("%02d%%  ", g_l);
         }
       }
     }
@@ -328,10 +329,11 @@ void loop() {
     
     lcd.setTextColor(TFT_GREEN, TFT_BLACK);
     lcd.setTextSize(2);
-    lcd.setCursor(10, 15);
+    // Shifted Standby text to clear hotspot
+    lcd.setCursor(10, 30);
     lcd.print("SYS NOMINAL");
     
-    lcd.setCursor(10, 40);
+    lcd.setCursor(10, 55);
     lcd.setTextSize(1);
     lcd.print("> Awaiting Daemon...");
 
