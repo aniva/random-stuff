@@ -26,10 +26,12 @@ TIMEZONE = "America/Toronto"
 LATITUDE = 43.5890
 LONGITUDE = -79.6441
 
-DIM_DELAY_HRS = 1.0      
-WAKE_ADVANCE_HRS = 1.0   
-BRIGHTNESS_DAY = 100 # max 255 for 8-bit brightness     
-BRIGHTNESS_NIGHT = 10 # originlly 30    
+# --- Solar Offset Logic ---
+DIM_OFFSET_HRS = -0.5    # Negative value = 30 mins BEFORE sunset
+WAKE_OFFSET_HRS = 0.75   # Positive value = 45 mins AFTER sunrise
+
+BRIGHTNESS_DAY = 30 # max 255 for 8-bit brightness     
+BRIGHTNESS_NIGHT = 3 # Lowers active night brightness to the absolute minimum
 
 # ==============================================================================
 # --- SYSTEM LOGIC ---
@@ -42,10 +44,19 @@ def getTargetBrightness():
     now = datetime.now(tz)
     try:
         solarData = sun(cityData.observer, date=now.date(), tzinfo=tz)
-        dimStart = solarData["sunset"] + timedelta(hours=DIM_DELAY_HRS)
-        dimStop = solarData["sunrise"] - timedelta(hours=WAKE_ADVANCE_HRS)
-        if dimStop <= now <= dimStart: return BRIGHTNESS_DAY
-        else: return BRIGHTNESS_NIGHT
+        
+        # End of day boundary (triggers night mode)
+        dimStart = solarData["sunset"] + timedelta(hours=DIM_OFFSET_HRS)
+        
+        # Start of day boundary (triggers day mode)
+        dimStop = solarData["sunrise"] + timedelta(hours=WAKE_OFFSET_HRS)
+        
+        # If current time is strictly between the wake boundary and dim boundary:
+        if dimStop <= now <= dimStart: 
+            return BRIGHTNESS_DAY
+        else: 
+            return BRIGHTNESS_NIGHT
+            
     except Exception:
         return BRIGHTNESS_DAY
 

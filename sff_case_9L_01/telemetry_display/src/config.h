@@ -7,8 +7,8 @@
 
 // --- Display Settings ---
 const bool isLandscape = false;
-const int bootBrightness = 30;       // Brightness (0-255) when PC is off
-const int standbyBrightness = 30;    // Brightness (0-255) after offline timeout expires
+const int bootBrightness = 3;      // Brightness (0-255) when PC is off
+const int standbyBrightness = 3;    // Aligns offline brightness with night-mode daemon target
 
 // --- Serial Communications ---
 const long serialBaudRate = 115200;
