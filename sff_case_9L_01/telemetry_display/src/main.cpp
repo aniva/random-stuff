@@ -73,6 +73,7 @@ String activeSensorLabel = "AMB:";
 
 int lastDiskState = -1;
 int lastPwrState = -1;
+int lastLhmState = -1;
 
 // --- Color Helpers ---
 uint16_t getTempColor(int temp) {
@@ -238,7 +239,8 @@ void loop() {
       int m = getValueByTag(inputString, "M:", ',');
       int c_l = getValueByTag(inputString, "C:", ',');
       int g_l = getValueByTag(inputString, "L:", ',');
-      int b = getValueByTag(inputString, "B:", '>');
+      int b = getValueByTag(inputString, "B:", ',');
+      int e = getValueByTag(inputString, "E:", '>');
 
       if (t != -1 && r != -1) {
         lastPayloadTime = currentMillis; 
@@ -250,65 +252,87 @@ void loop() {
 
         if (b != -1) lcd.setBrightness(b);
 
+        if (e != lastLhmState) {
+          forceRedraw = true;
+          lastLhmState = e;
+        }
+
         if (forceRedraw) {
           drawBaseLayout();
           forceRedraw = false;
         }
 
-        // --- SHIFTED Y-COORDINATES ---
-        lcd.setTextSize(2);
-        if (isLandscape) {
-          int col1_L = 10, col1_V = 96, col2_L = 170, col2_V = 256;
-          
-          lcd.setTextColor(getTempColor(t), TFT_BLACK);
-          lcd.setCursor(col1_L, 25); lcd.print("CPU:");
-          lcd.setCursor(col1_V, 25); lcd.printf("%02d C  ", t);
-
-          lcd.setTextColor(getTempColor(g_t), TFT_BLACK);
-          lcd.setCursor(col2_L, 25); lcd.print("GPU:");
-          lcd.setCursor(col2_V, 25); lcd.printf("%02d C  ", g_t);
-
-          lcd.setTextColor(getFanColor(r), TFT_BLACK);
-          lcd.setCursor(col1_L, 60); lcd.print("FAN:");
-          lcd.setCursor(col1_V, 60); lcd.printf("%04d  ", r);
-
-          lcd.setTextColor(getTempColor(m), TFT_BLACK);
-          lcd.setCursor(col2_L, 60); lcd.print("SSD:");
-          lcd.setCursor(col2_V, 60); lcd.printf("%02d C  ", m);
-
-          lcd.setTextColor(getLoadColor(c_l), TFT_BLACK);
-          lcd.setCursor(col1_L, 95); lcd.print("CPU L:");
-          lcd.setCursor(col1_V, 95); lcd.printf("%02d%%  ", c_l);
-
-          lcd.setTextColor(getLoadColor(g_l), TFT_BLACK);
-          lcd.setCursor(col2_L, 95); lcd.print("GPU L:");
-          lcd.setCursor(col2_V, 95); lcd.printf("%02d%%  ", g_l);
+        if (e == 1) {
+          // Render warning when LibreHardwareMonitor Web Server is offline
+          lcd.setTextSize(2);
+          lcd.setTextColor(TFT_RED, TFT_BLACK);
+          if (isLandscape) {
+            lcd.setCursor(10, 45);
+            lcd.print("LHM WEB SERVER");
+            lcd.setCursor(10, 75);
+            lcd.print("OFFLINE");
+          } else {
+            lcd.setCursor(10, 80);
+            lcd.print("LHM SERVER");
+            lcd.setCursor(10, 110);
+            lcd.print("OFFLINE");
+          }
         } else {
-          int col_L = 10, col_V = 96;
+          // --- Normal Telemetry Rendering ---
+          lcd.setTextSize(2);
+          if (isLandscape) {
+            int col1_L = 10, col1_V = 96, col2_L = 170, col2_V = 256;
+            
+            lcd.setTextColor(getTempColor(t), TFT_BLACK);
+            lcd.setCursor(col1_L, 25); lcd.print("CPU:");
+            lcd.setCursor(col1_V, 25); lcd.printf("%02d C  ", t);
 
-          lcd.setTextColor(getTempColor(t), TFT_BLACK);
-          lcd.setCursor(col_L, 30); lcd.print("CPU:");
-          lcd.setCursor(col_V, 30); lcd.printf("%02d C  ", t);
+            lcd.setTextColor(getTempColor(g_t), TFT_BLACK);
+            lcd.setCursor(col2_L, 25); lcd.print("GPU:");
+            lcd.setCursor(col2_V, 25); lcd.printf("%02d C  ", g_t);
 
-          lcd.setTextColor(getTempColor(g_t), TFT_BLACK);
-          lcd.setCursor(col_L, 65); lcd.print("GPU:");
-          lcd.setCursor(col_V, 65); lcd.printf("%02d C  ", g_t);
+            lcd.setTextColor(getFanColor(r), TFT_BLACK);
+            lcd.setCursor(col1_L, 60); lcd.print("FAN:");
+            lcd.setCursor(col1_V, 60); lcd.printf("%04d  ", r);
 
-          lcd.setTextColor(getFanColor(r), TFT_BLACK);
-          lcd.setCursor(col_L, 100); lcd.print("FAN:");
-          lcd.setCursor(col_V, 100); lcd.printf("%04d  ", r);
+            lcd.setTextColor(getTempColor(m), TFT_BLACK);
+            lcd.setCursor(col2_L, 60); lcd.print("SSD:");
+            lcd.setCursor(col2_V, 60); lcd.printf("%02d C  ", m);
 
-          lcd.setTextColor(getTempColor(m), TFT_BLACK);
-          lcd.setCursor(col_L, 135); lcd.print("SSD:");
-          lcd.setCursor(col_V, 135); lcd.printf("%02d C  ", m);
+            lcd.setTextColor(getLoadColor(c_l), TFT_BLACK);
+            lcd.setCursor(col1_L, 95); lcd.print("CPU L:");
+            lcd.setCursor(col1_V, 95); lcd.printf("%02d%%  ", c_l);
 
-          lcd.setTextColor(getLoadColor(c_l), TFT_BLACK);
-          lcd.setCursor(col_L, 170); lcd.print("CPU L:");
-          lcd.setCursor(col_V, 170); lcd.printf("%02d%%  ", c_l);
+            lcd.setTextColor(getLoadColor(g_l), TFT_BLACK);
+            lcd.setCursor(col2_L, 95); lcd.print("GPU L:");
+            lcd.setCursor(col2_V, 95); lcd.printf("%02d%%  ", g_l);
+          } else {
+            int col_L = 10, col_V = 96;
 
-          lcd.setTextColor(getLoadColor(g_l), TFT_BLACK);
-          lcd.setCursor(col_L, 205); lcd.print("GPU L:");
-          lcd.setCursor(col_V, 205); lcd.printf("%02d%%  ", g_l);
+            lcd.setTextColor(getTempColor(t), TFT_BLACK);
+            lcd.setCursor(col_L, 30); lcd.print("CPU:");
+            lcd.setCursor(col_V, 30); lcd.printf("%02d C  ", t);
+
+            lcd.setTextColor(getTempColor(g_t), TFT_BLACK);
+            lcd.setCursor(col_L, 65); lcd.print("GPU:");
+            lcd.setCursor(col_V, 65); lcd.printf("%02d C  ", g_t);
+
+            lcd.setTextColor(getFanColor(r), TFT_BLACK);
+            lcd.setCursor(col_L, 100); lcd.print("FAN:");
+            lcd.setCursor(col_V, 100); lcd.printf("%04d  ", r);
+
+            lcd.setTextColor(getTempColor(m), TFT_BLACK);
+            lcd.setCursor(col_L, 135); lcd.print("SSD:");
+            lcd.setCursor(col_V, 135); lcd.printf("%02d C  ", m);
+
+            lcd.setTextColor(getLoadColor(c_l), TFT_BLACK);
+            lcd.setCursor(col_L, 170); lcd.print("CPU L:");
+            lcd.setCursor(col_V, 170); lcd.printf("%02d%%  ", c_l);
+
+            lcd.setTextColor(getLoadColor(g_l), TFT_BLACK);
+            lcd.setCursor(col_L, 205); lcd.print("GPU L:");
+            lcd.setCursor(col_V, 205); lcd.printf("%02d%%  ", g_l);
+          }
         }
       }
     }
@@ -320,6 +344,7 @@ void loop() {
     isOnline = false;
     forceRedraw = true; 
     lcd.setBrightness(standbyBrightness); 
+    lastLhmState = -1;
   }
 
   if (!isOnline && forceRedraw) {

@@ -102,8 +102,9 @@ def fetchHttpTelemetry(metrics):
         req = urllib.request.urlopen(LHM_JSON_URL, timeout=HTTP_TIMEOUT)
         dataMap = json.loads(req.read().decode('utf-8'))
         findSensor(dataMap)
+        return True
     except Exception as e:
-        pass
+        return False
 
 def main():
     serPort = None
@@ -126,13 +127,14 @@ def main():
             'ssd_temp': "0", 'cpu_load': "0", 'gpu_load': "0"
         }
 
-        fetchHttpTelemetry(metrics)
+        success = fetchHttpTelemetry(metrics)
+        status = 0 if success else 1
 
         fList = metrics['fan_list']
         avgFan = str(sum(fList) // len(fList)) if fList else "0"
         tBright = getTargetBrightness()
         
-        payloadStr = f"<T:{metrics['cpu_temp']},R:{avgFan},G:{metrics['gpu_temp']},M:{metrics['ssd_temp']},C:{metrics['cpu_load']},L:{metrics['gpu_load']},B:{tBright}>\n"
+        payloadStr = f"<T:{metrics['cpu_temp']},R:{avgFan},G:{metrics['gpu_temp']},M:{metrics['ssd_temp']},C:{metrics['cpu_load']},L:{metrics['gpu_load']},B:{tBright},E:{status}>\n"
         
         try:
             serPort.write(payloadStr.encode('utf-8'))
