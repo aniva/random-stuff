@@ -1,10 +1,11 @@
 # Project: Custom 9L SFF Chassis (Aniva SFF)
 
-A distinct, proprietary SFF chassis design (digital CAD files and fabricated physical units) engineered for commercial productization. This project establishes an independent design footprint through customized structural dimensions, optimized thermal headroom, and an integrated hardware telemetry screen.
+An open-source SFF chassis design (digital CAD files and fabricated physical units) created to help fellow builders. This project showcases a unique hardware and software integration as an art project for delight (featuring a Pip-Boy themed display), establishing an independent design footprint through customized structural dimensions, optimized thermal headroom, and an integrated hardware telemetry screen.
 
 ## 1. Project Objectives
-* **Commercial Productization:** Engineer, print, and market both the digital CAD files (STEP/STL) and fabricated physical units of this proprietary ~9L SFF enclosure.
-* **Proprietary Architecture:** Ensure a wholly original, ground-up design architecture tailored for optimal structural integrity and thermal management.
+* **Open Source Community:** Provide free digital CAD files (STEP/STL) to help the SFF building community create and modify their own ~9L enclosures.
+* **Art & Delight:** Showcase unique hardware and software integration, primarily through a custom Pip-Boy themed telemetry display.
+* **Custom Architecture:** Ensure a wholly original, ground-up design architecture tailored for optimal structural integrity and thermal management.
 * **Hardware Telemetry Integration:** Natively integrate a Waveshare ESP32-C6 1.47-inch touch display into the front panel to monitor system metrics (thermals, loads, fan speeds).
 
 ## 2. Custom Fabrication Details
