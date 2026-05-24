@@ -125,11 +125,11 @@ void setup() {
   pinMode(hddLedPin, INPUT_PULLUP);
   pinMode(pwrLedPin, INPUT_PULLUP);
   
-  // 1. Route hardware bus to Front Sensor pins & initialize
+  // Route hardware I2C0 (Wire) to Front Sensor pins & initialize
   Wire.begin(i2c0SdaPin, i2c0SclPin);
   if (ahtFront.begin(&Wire)) frontInit = true;
 
-  // 2. Route hardware bus to Rear Sensor pins & initialize
+  // Route hardware I2C0 (Wire) to Rear Sensor pins & initialize
   Wire.begin(i2c1SdaPin, i2c1SclPin);
   if (ahtRear.begin(&Wire)) rearInit = true;
 
@@ -145,9 +145,7 @@ void setup() {
 void loop() {
   unsigned long currentMillis = millis();
 
-  pinMode(hddLedPin, INPUT_PULLUP);
-  pinMode(pwrLedPin, INPUT_PULLUP);
-
+  // Reverted to analogRead due to weak optocoupler pull-down voltage levels
   int diskState = (analogRead(hddLedPin) < ledThreshold) ? LOW : HIGH;
   int pwrState = (analogRead(pwrLedPin) < ledThreshold) ? LOW : HIGH;
 
@@ -168,7 +166,7 @@ void loop() {
   }
 
   // =================================================================
-  // I2C BUS HOPPING LOGIC
+  // I2C BUS HOPPING LOGIC (Reverted because ESP32-C6 has only 1 regular hardware controller)
   // =================================================================
   if ((frontInit || rearInit) && (currentMillis - lastSensorRead >= sensorPollMs)) {
     float tempF = -999.0, humF = 0.0;
@@ -223,9 +221,9 @@ void loop() {
   }
 
   // =================================================================
-  // SERIAL & DISPLAY LOGIC 
+  // SERIAL & DISPLAY LOGIC (With stringComplete loop guard)
   // =================================================================
-  while (Serial.available()) {
+  while (Serial.available() && !stringComplete) {
     char inChar = (char)Serial.read();
     if (inChar == '<') { inputString = "<"; }
     else if (inChar != '\n' && inChar != '\r') { inputString += inChar; }

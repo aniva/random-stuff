@@ -122,14 +122,16 @@ graph TD
 | :--- | :--- | :--- |
 | **Firmware** | C++ / PlatformIO / Arduino framework | Compiled in VSCode. Uses [LovyanGFX](https://github.com/lovyan03/LovyanGFX) for display driving. |
 | **Host Daemon** | Python (`telemetry_stream.py`) | Queries hardware sensors and pushes serial payloads to the ESP32. |
-| **Hardware Monitoring Backend** | [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) (recommended) | The daemon reads sensor data via WMI namespace or the built-in HTTP JSON API (default port `8085`). OpenHardwareMonitor is also supported as a fallback. |
+| **Hardware Monitoring Backend** | [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) (recommended) | The daemon reads sensor data exclusively via the built-in HTTP JSON API (default port `8085`) to optimize performance and prevent host CPU overhead. WMI query fallback logic is removed. |
 | **Geospatial Dimming** | Python `astral` library | Calculates local sunrise/sunset times and appends a brightness target to the serial payload so the display auto-dims at night. Configure your own coordinates in the script. |
 | **Windows Service** | Scheduled Task (`SFF_Telemetry_Daemon`) | Runs silently at user logon with a 30-second boot delay to allow USB enumeration to complete. |
 
-### 4.1. Serial Protocol & Known Quirks
+### 4.1. Serial Protocol & Hardware Quirks
 
 * **CH343 Auto-Reset Trap:** The Waveshare ESP32-C6 uses a CH343 UART bridge where DTR/RTS are wired to EN and IO0. Asserting these lines resets the chip into Download Mode. The serial connection **must** be opened with `DTR=False` and `RTS=False`.
-* **Buffer Sanitization:** The firmware flushes its input buffer on the `<` character and ignores `\r` / `\n` to prevent string corruption from mixed line endings.
+* **Buffer Sanitization & Overrun Protection:** The firmware flushes its input buffer on the `<` character and ignores `\r` / `\n` to prevent string corruption from mixed line endings. A loop guard (`!stringComplete`) stops reading from the serial FIFO when a complete packet is detected, preventing truncation or overwrites when multiple frames are pending.
+* **Dynamic I2C Bus Hopping:** The ESP32-C6 features only one standard/regular hardware I2C controller. Since both temperature sensors share the same hardcoded I2C address (`0x38`), the firmware dynamically reroutes the pins of the single Wire peripheral (`GP0/GP1` for front, `GP2/GP3` for rear) during the execution loop to sample both devices sequentially.
+* **Optocoupler Analog Threshold Reading:** Due to the PC817 optocoupler's Current Transfer Ratio (CTR) and low forward current from motherboard LED headers, the phototransistor's collector voltage remains above ~1V when active. This exceeds the digital logic-low threshold on ESP32-C6 GPIO pins. The status pins are read via `analogRead()` and evaluated against a software threshold (`ledThreshold = 3000`) to guarantee reliable state transition detection.
 * **Graceful Offline State:** When serial data stops arriving for 8 seconds (configurable), the display gracefully transitions to a dim standby mode while continuing to render ambient sensor data — no reboot, no crash.
 
 ---

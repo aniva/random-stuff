@@ -1,6 +1,5 @@
 import time
 import serial
-import wmi
 import sys
 import urllib.request
 import json
@@ -121,63 +120,13 @@ def main():
         except serial.SerialException:
             time.sleep(5.0)
 
-    wmiClient = None
-    useHttp = False
-
-    try:
-        wmiClient = wmi.WMI(namespace=r"root\LibreHardwareMonitor")
-    except Exception:
-        try:
-            wmiClient = wmi.WMI(namespace=r"root\OpenHardwareMonitor")
-        except Exception:
-            useHttp = True
-
     while True:
         metrics = {
             'cpu_temp': "0", 'fan_list': [], 'gpu_temp': "0", 
             'ssd_temp': "0", 'cpu_load': "0", 'gpu_load': "0"
         }
 
-        if not useHttp and wmiClient:
-            try:
-                for sensorObj in wmiClient.Sensor():
-                    if sensorObj.Value is None: continue
-                    
-                    sName = str(sensorObj.Name).lower()
-                    sType = str(sensorObj.SensorType).lower()
-                    identifier = str(getattr(sensorObj, 'Identifier', '')).lower()
-                    
-                    try:
-                        val_int = int(float(sensorObj.Value))
-                        val = str(val_int)
-                    except Exception:
-                        continue
-
-                    if sType == "temperature":
-                        if "/intelcpu" in identifier and "cpu package" in sName:
-                            metrics['cpu_temp'] = val
-                        elif "/gpu" in identifier and "gpu core" in sName:
-                            metrics['gpu_temp'] = val
-                        elif "/nvme" in identifier or "/ssd" in identifier or "/hdd" in identifier:
-                            # CRITICAL: Exclude static threshold limits
-                            if "warning" not in sName and "critical" not in sName:
-                                if "temperature" in sName or "composite" in sName:
-                                    if val_int > int(metrics['ssd_temp']):
-                                        metrics['ssd_temp'] = val
-                                    
-                    elif sType == "load":
-                        if "/intelcpu" in identifier and "cpu total" in sName:
-                            metrics['cpu_load'] = val
-                        elif "/gpu" in identifier and "gpu core" in sName:
-                            metrics['gpu_load'] = val
-                            
-                    elif sType == "fan":
-                        if val_int > 0 and "/gpu" not in identifier:
-                            metrics['fan_list'].append(val_int)
-            except Exception:
-                useHttp = True 
-        else:
-            fetchHttpTelemetry(metrics)
+        fetchHttpTelemetry(metrics)
 
         fList = metrics['fan_list']
         avgFan = str(sum(fList) // len(fList)) if fList else "0"
