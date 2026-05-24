@@ -1,4 +1,4 @@
-# Project: Custom 9L SFF Chassis (Aniva SFF)
+# Project: Aniva SFF01 (Custom 9L SFF Chassis)
 
 An open-source SFF chassis design (digital CAD files and fabricated physical units) created to help fellow builders. This project showcases a unique hardware and software integration as an art project for delight (featuring a Pip-Boy themed display), establishing an independent design footprint through customized structural dimensions, optimized thermal headroom, and an integrated hardware telemetry screen.
 
@@ -23,7 +23,7 @@ Real-time environmental and hardware monitoring is achieved via an integrated mi
 * **Microcontroller:** Waveshare ESP32-C6 Development Board.
 * **Display Output:** 1.47-inch integrated IPS LCD Touch Display (172×320 resolution, JD9853 driver).
 * **Firmware (Device):** Written in C++ utilizing the LovyanGFX graphics library, compiled via PlatformIO in VSCode. Device is configured to boot directly into USB CDC mode (ARDUINO_USB_CDC_ON_BOOT=1) to act as a dedicated serial receiver.
-* **Host Daemon (Windows):** A Python script running continuously as a background service on Windows 11. It extracts CPU Temperature and Fan RPM data via WMI/OpenHardwareMonitor libraries and pushes a formatted payload string (e.g., <T:55,R:2100>) to the ESP32-C6 over the internal USB header connection.
+* **Host Daemon (Windows):** A Python script running continuously as a background service on Windows 11. It extracts CPU, GPU, SSD temperatures, fan speeds, and system loads via the LibreHardwareMonitor HTTP JSON API and pushes a formatted payload string (e.g., <T:55,R:2100,...>) to the ESP32-C6 over the internal USB header connection.
 
 ## 4. Repository Structure
 * **📁 [cad_files/](cad_files/)** — Collection of STEP and STL files for 3D printing and CAD modification. See [CAD README](cad_files/README.md).
