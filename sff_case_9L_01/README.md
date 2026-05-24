@@ -26,8 +26,8 @@ Real-time environmental and hardware monitoring is achieved via an integrated mi
 * **Host Daemon (Windows):** A Python script running continuously as a background service on Windows 11. It extracts CPU Temperature and Fan RPM data via WMI/OpenHardwareMonitor libraries and pushes a formatted payload string (e.g., <T:55,R:2100>) to the ESP32-C6 over the internal USB header connection.
 
 ## 4. Repository Structure
-* **📁 [cad_files/](file:///D:/Users/me/Documents/projects/random-stuff/sff_case_9L_01/cad_files)** — Collection of STEP and STL files for 3D printing and CAD modification.
-* **📁 [telemetry_display/](file:///D:/Users/me/Documents/projects/random-stuff/sff_case_9L_01/telemetry_display)** — PlatformIO firmware and Python host daemon scripts.
+* **📁 [cad_files/](cad_files/)** — Collection of STEP and STL files for 3D printing and CAD modification. See [CAD README](cad_files/README.md).
+* **📁 [telemetry_display/](telemetry_display/)** — PlatformIO firmware, Python host daemon, and wiring documentation for the Pip-Boy telemetry display. See [Telemetry Display README](telemetry_display/README.md).
 
 ## 5. Pending / Active Tasks
 * [ ] **Front Panel Fabrication:** Measure the physical tolerances of the Waveshare ESP32-C6 PCB and Type-C port using digital calipers upon arrival. Execute Shapr3D cuts for a zero-clearance flush mount and print the final PC-PBT front panel.
