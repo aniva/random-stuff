@@ -59,59 +59,86 @@ This project is designed to be **open-ended**. The specific components listed be
 ## 3. Hardware Interconnect Schematic
 
 ```mermaid
-graph TD
-    subgraph Motherboard Front Panel Header
-        MB_HDD[HDD LED +/−]
-        MB_PWR[PWR LED +/−]
+flowchart LR
+    %% Style Definitions for Nodes
+    classDef default fill:#111,stroke:#333,stroke-width:1px,color:#eee;
+    classDef motherboard fill:#1a1c23,stroke:#f87171,stroke-width:2px,color:#fca5a5;
+    classDef isolation fill:#1a1c23,stroke:#fbbf24,stroke-width:2px,color:#fde68a;
+    classDef controller fill:#142217,stroke:#4ade80,stroke-width:2px,color:#a7f3d0;
+    classDef power fill:#111,stroke:#ef4444,stroke-width:1.5px,color:#f87171;
+    classDef sensors fill:#171c28,stroke:#60a5fa,stroke-width:2px,color:#bfdbfe;
+
+    subgraph Motherboard [Motherboard Headers]
+        MB_HDD["HDD LED (+/-)"]
+        MB_PWR["PWR LED (+/-)"]
     end
+    class Motherboard motherboard;
 
-    subgraph Optical Isolation Layer
-        OPTO_HDD[PC817 Module 1]
-        OPTO_PWR[PC817 Module 2]
+    subgraph Opto [PC817 Optical Isolation]
+        OPTO_HDD["PC817 Module 1<br>(HDD State)"]
+        OPTO_PWR["PC817 Module 2<br>(PWR State)"]
     end
+    class Opto isolation;
 
-    subgraph Power Distribution
-        V33_SPLICE((3.3V Splice Array))
-        GND_SPLICE((GND Splice Array))
+    subgraph ESP [ESP32-C6 Controller]
+        V33["3.3V VCC Out"]
+        GND["Common GND"]
+        GP4["GP4 (HDD IN)"]
+        GP5["GP5 (PWR IN)"]
+        GP0_1["GP0 & GP1 (I2C-0)"]
+        GP2_3["GP2 & GP3 (I2C-1)"]
     end
+    class ESP controller;
 
-    subgraph ESP32-C6 Telemetry Controller
-        V33[3.3V VCC Out]
-        GND[Common GND]
-        GPIO4[GP4: HDD State IN]
-        GPIO5[GP5: PWR State IN]
-        GPIO0_1[GP0 & GP1: I2C-0]
-        GPIO2_3[GP2 & GP3: I2C-1]
+    subgraph Power [Power Splices]
+        V33_SPLICE((3.3V Bus))
+        GND_SPLICE((GND Bus))
     end
+    class Power power;
 
-    subgraph Ambient Sensing Array
-        AHT1[Sensor Primary]
-        AHT2[Sensor Secondary]
+    subgraph Sensors [Ambient Sensors]
+        AHT_F["Front AHT20<br>(Primary)"]
+        AHT_R["Rear AHT20<br>(Secondary)"]
     end
+    class Sensors sensors;
 
-    %% High Voltage / Isolated Side
-    MB_HDD -->|HDD+ / HDD-| OPTO_HDD
-    MB_PWR -->|PWR+ / PWR-| OPTO_PWR
+    %% Wiring Connections
 
-    %% Main Power Trunks (ESP32 to Splice Blocks)
-    V33 ==>|Supply Trunk| V33_SPLICE
-    GND ==>|Ground Trunk| GND_SPLICE
+    %% Isolated loop from motherboard to optocouplers
+    MB_HDD ==>|Isolated Loop| OPTO_HDD
+    MB_PWR ==>|Isolated Loop| OPTO_PWR
 
-    %% 3.3V Distribution
-    V33_SPLICE -->|VCC| AHT1
-    V33_SPLICE -->|VCC| AHT2
+    %% Power Delivery Trunks from ESP
+    V33 ==>|Supply| V33_SPLICE
+    GND ==>|Common GND| GND_SPLICE
 
-    %% GND Distribution (Logic Side)
-    GND_SPLICE -->|Logic GND| OPTO_HDD
-    GND_SPLICE -->|Logic GND| OPTO_PWR
-    GND_SPLICE -->|GND| AHT1
-    GND_SPLICE -->|GND| AHT2
+    %% 3.3V Power routing (Red color)
+    V33_SPLICE -->|VCC| AHT_F
+    V33_SPLICE -->|VCC| AHT_R
+    linkStyle 4 stroke:#f87171,stroke-width:2px;
+    linkStyle 5 stroke:#f87171,stroke-width:2px;
 
-    %% Signal Routing
-    OPTO_HDD -->|Signal| GPIO4
-    OPTO_PWR -->|Signal| GPIO5
-    AHT1 -.->|SDA / SCL| GPIO0_1
-    AHT2 -.->|SDA / SCL| GPIO2_3
+    %% GND Power routing (Grey/Black color)
+    GND_SPLICE -->|GND| OPTO_HDD
+    GND_SPLICE -->|GND| OPTO_PWR
+    GND_SPLICE -->|GND| AHT_F
+    GND_SPLICE -->|GND| AHT_R
+    linkStyle 6 stroke:#9ca3af,stroke-width:2px;
+    linkStyle 7 stroke:#9ca3af,stroke-width:2px;
+    linkStyle 8 stroke:#9ca3af,stroke-width:2px;
+    linkStyle 9 stroke:#9ca3af,stroke-width:2px;
+
+    %% Telemetry Signals (Green color)
+    OPTO_HDD -->|Signal| GP4
+    OPTO_PWR -->|Signal| GP5
+    linkStyle 10 stroke:#4ade80,stroke-width:2px;
+    linkStyle 11 stroke:#4ade80,stroke-width:2px;
+
+    %% I2C Data Buses (Blue dashed color)
+    AHT_F -.-|SDA/SCL| GP0_1
+    AHT_R -.-|SDA/SCL| GP2_3
+    linkStyle 12 stroke:#60a5fa,stroke-width:2px,stroke-dasharray: 5 5;
+    linkStyle 13 stroke:#60a5fa,stroke-width:2px,stroke-dasharray: 5 5;
 ```
 
 ---
