@@ -21,15 +21,37 @@ Once these symbolic links are established, your workflow becomes significantly m
 
 ```mermaid
 flowchart TD
+    %% Style Definitions
+    classDef default fill:#111,stroke:#333,stroke-width:1px,color:#eee;
+    classDef user fill:#1a1c23,stroke:#3b82f6,stroke-width:2px,color:#60a5fa;
+    classDef agent fill:#142217,stroke:#4ade80,stroke-width:2px,color:#a7f3d0;
+    classDef file fill:#1a1c23,stroke:#fbbf24,stroke-width:2px,color:#fde68a;
+    classDef repo fill:#1a1c23,stroke:#a855f7,stroke-width:2px,color:#d8b4fe;
+    classDef appdata fill:#201415,stroke:#f87171,stroke-width:1.5px,color:#fca5a5;
+    classDef studio fill:#1a1c23,stroke:#06b6d4,stroke-width:2px,color:#67e8f9;
+
     User([User]) -->|Uploads Spool Photo| Agent{AI Agent}
-    Agent <-->|Reads Strict Formatting Rules| Rules[agents.md]
-    Agent -->|Generates Valid JSON Profile| Repo[Git Repository]
+    Agent <-->|Reads Rules| Rules[agents.md]
+    Agent -->|Generates Valid JSON| Repo[Git Repository]
     
-    subgraph Local PC
-        Repo -.->|Symbolic Link from prepare_windows.cmd| AppData[Windows %AppData%]
+    subgraph LocalPC [Local PC]
+        Repo -.->|Symbolic Link| AppData[Windows %AppData%]
     end
     
     AppData -->|Loads Profile on Restart| Studio(QIDI Studio)
+
+    class User user;
+    class Agent agent;
+    class Rules file;
+    class Repo repo;
+    class AppData appdata;
+    class Studio studio;
+
+    linkStyle 0 stroke:#60a5fa,stroke-width:2px;
+    linkStyle 1 stroke:#fbbf24,stroke-width:2px;
+    linkStyle 2 stroke:#4ade80,stroke-width:2px;
+    linkStyle 3 stroke:#d8b4fe,stroke-width:2px,stroke-dasharray: 5 5;
+    linkStyle 4 stroke:#67e8f9,stroke-width:2px;
 ```
 
 ### Examples in Action
@@ -37,11 +59,12 @@ flowchart TD
 Here is what it looks like when QIDI Studio successfully loads the agent-generated profiles via the symbolic links. Notice the `(vscode)` suffix which is used to instantly identify profiles that were built by the AI agent rather than the stock system profiles.
 
 #### 1. Filament Profiles
-![List of filament profiles showing the agent-generated profile with the (vscode) suffix](images/qidi_studio_screenshot_01.png)
+<img src="images/qidi_studio_screenshot_01.png" alt="List of filament profiles showing the agent-generated profile with the (vscode) suffix" width="650">
+
 *When selecting a filament profile for the printer, the agent-generated profiles appear directly in the drop-down menu.*
 
 #### 2. Process Settings
-![Process settings showing a custom PC case profile with specific infill patterns](images/qidi_studio_screenshot_02.png)
+<img src="images/qidi_studio_screenshot_02.png" alt="Process settings showing a custom PC case profile with specific infill patterns" width="650">
 
 *This is an example of an agent-generated Process profile. Instead of manually configuring settings like the infill pattern for every large structural print, you can have the agent generate a reusable "PC Case" profile.*
 
