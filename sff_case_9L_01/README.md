@@ -10,6 +10,7 @@ An open-source SFF chassis design (digital CAD files and fabricated physical uni
 
 ## 2. Custom Fabrication Details
 * **Chassis Material:** Polymaker PC-PBT. The original ABS iteration was scrapped and fully re-printed to permanently eliminate toxic styrene off-gassing (VOCs) experienced under ambient internal temperatures exceeding 50°C. PC-PBT provides zero VOC emissions under load, high impact resistance, and a Glass Transition Temperature ($) of ~110°C.
+* **Print Profiles & Filament Settings:** Detailed QIDI printer configurations, filament settings, and process parameters for fabricating this chassis are located in the sibling [qidi-studio](../qidi-studio) folder.
 * **Assembly Architecture:** Modular panels secured via M3 bolts. Shapr3D captive nut recesses calibrated to 5.65mm - 5.70mm to accommodate the mechanical rigidity and yield stress of the PC-PBT matrix.
 * **Dimensional Architecture:**
     * **Height (H):** Engineered with precise vertical clearance to natively integrate top-mounted active exhaust fans.
