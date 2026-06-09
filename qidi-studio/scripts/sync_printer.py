@@ -124,13 +124,43 @@ def upload_file(ip, relative_path, file_bytes):
     boundary = uuid.uuid4().hex
     headers = {'Content-Type': f'multipart/form-data; boundary={boundary}'}
     
-    # Standardize filename format to forward slashes for the Moonraker upload API
-    filename = relative_path.replace(os.sep, '/')
-    body = (
+    # Split the relative path into directory path and filename
+    # e.g., 'klipper-macros-qd/KAMP_Settings.cfg' -> ('klipper-macros-qd', 'KAMP_Settings.cfg')
+    relative_path = relative_path.replace('\\', '/')
+    if '/' in relative_path:
+        path, filename = relative_path.rsplit('/', 1)
+    else:
+        path, filename = '', relative_path
+
+    parts = []
+    
+    # Add 'root' field
+    parts.append(
+        f"--{boundary}\r\n"
+        f'Content-Disposition: form-data; name="root"\r\n\r\n'
+        f"config\r\n"
+    )
+    
+    # Add 'path' field if present
+    if path:
+        parts.append(
+            f"--{boundary}\r\n"
+            f'Content-Disposition: form-data; name="path"\r\n\r\n'
+            f"{path}\r\n"
+        )
+        
+    # Add 'file' field
+    parts.append(
         f"--{boundary}\r\n"
         f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'
-        "Content-Type: application/octet-stream\r\n\r\n"
-    ).encode('utf-8') + file_bytes + f"\r\n--{boundary}--\r\n".encode('utf-8')
+        f"Content-Type: application/octet-stream\r\n\r\n"
+    )
+    
+    body = b""
+    for p in parts:
+        body += p.encode('utf-8')
+    body += file_bytes
+    body += f"\r\n--{boundary}--\r\n".encode('utf-8')
     
     return http_post(ip, "/server/files/upload?root=config", data=body, headers=headers)
 
