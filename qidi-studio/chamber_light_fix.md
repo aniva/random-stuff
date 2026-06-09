@@ -33,3 +33,24 @@ SET_PIN PIN=caselight VALUE=1
 1. **Restart QIDI Studio:** Since QIDI Studio automatically picks up changes to symbolic-linked user profiles on startup, simply close and reopen QIDI Studio.
 2. **Select the Profile:** Ensure you are using the custom profile **`Q2 0.4 nozzle 01`** when slicing.
 3. **Verify:** Slice a model and verify in the G-code preview (or test print) that `SET_PIN PIN=caselight VALUE=1` appears at the end of the file.
+
+---
+
+## Manual Chamber Light Control Script
+
+We have also created a handy utility script in the repository to turn the chamber light on or off manually from the command line:
+
+### Usage:
+* **Turn Light On:**
+  ```bash
+  python qidi-studio/scripts/control_light.py on
+  ```
+* **Turn Light Off:**
+  ```bash
+  python qidi-studio/scripts/control_light.py off
+  ```
+
+*(If using WSL, you can run `python3 qidi-studio/scripts/control_light.py on/off`)*
+
+The script reads your printer's IP address from `printer_config.json` and transmits the corresponding Klipper command via the Moonraker HTTP API.
+
