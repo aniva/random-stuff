@@ -137,3 +137,6 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# QIDI Printer configuration local IP
+qidi-studio/printer_config.json
