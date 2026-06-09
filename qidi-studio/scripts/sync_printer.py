@@ -6,6 +6,7 @@ import re
 import urllib.request
 import urllib.error
 import uuid
+import fnmatch
 
 # Base directories
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -30,6 +31,8 @@ def load_printer_ip():
         sys.exit(1)
 
 def http_get(ip, path):
+    # Standardize path formatting (must use forward slashes for URLs)
+    path = path.replace('\\', '/')
     url = f"http://{ip}{path}"
     try:
         with urllib.request.urlopen(url, timeout=10) as response:
@@ -39,6 +42,7 @@ def http_get(ip, path):
         sys.exit(1)
 
 def http_post(ip, path, data=None, headers=None):
+    path = path.replace('\\', '/')
     url = f"http://{ip}{path}"
     req = urllib.request.Request(url, data=data, headers=headers or {}, method='POST')
     try:
@@ -60,36 +64,59 @@ def parse_includes(content_str):
             includes.append(match.group(1).strip())
     return includes
 
+def get_config_files_list(ip):
+    res = http_get(ip, "/server/files/list?root=config")
+    try:
+        data = json.loads(res.decode('utf-8'))
+        return [item['path'] for item in data.get('result', [])]
+    except Exception as e:
+        print(f"Error parsing file list from Moonraker: {e}")
+        sys.exit(1)
+
 def pull_configs(ip):
     print(f"Connecting to printer at {ip} to pull configurations...")
     os.makedirs(LOCAL_CONFIG_DIR, exist_ok=True)
     
-    # 1. Download printer.cfg
-    print("Downloading printer.cfg...")
-    printer_cfg_bytes = http_get(ip, "/server/files/config/printer.cfg")
-    printer_cfg_str = printer_cfg_bytes.decode('utf-8', errors='ignore')
+    # Get all files available on the printer's config folder
+    all_printer_files = get_config_files_list(ip)
     
-    with open(os.path.join(LOCAL_CONFIG_DIR, 'printer.cfg'), 'wb') as f:
-        f.write(printer_cfg_bytes)
+    to_download = {"printer.cfg"}
+    downloaded = set()
     
-    # 2. Parse includes
-    includes = parse_includes(printer_cfg_str)
-    print(f"Found {len(includes)} included files to download: {includes}")
-    
-    # 3. Download included files
-    for include in includes:
-        local_path = os.path.join(LOCAL_CONFIG_DIR, include)
+    while to_download:
+        current = to_download.pop()
+        downloaded.add(current)
+        
+        # Standardize local file path separator for operating systems
+        local_path = os.path.join(LOCAL_CONFIG_DIR, current.replace('/', os.sep))
         local_subdir = os.path.dirname(local_path)
         if local_subdir:
             os.makedirs(local_subdir, exist_ok=True)
             
-        print(f"Downloading {include}...")
+        print(f"Downloading {current}...")
         try:
-            include_bytes = http_get(ip, f"/server/files/config/{include}")
+            file_bytes = http_get(ip, f"/server/files/config/{current}")
             with open(local_path, 'wb') as f:
-                f.write(include_bytes)
+                f.write(file_bytes)
+                
+            # Parse includes to discover recursive dependencies
+            content_str = file_bytes.decode('utf-8', errors='ignore')
+            includes = parse_includes(content_str)
+            for include in includes:
+                # Match include pattern against all printer files
+                matched = False
+                for p_file in all_printer_files:
+                    if fnmatch.fnmatchcase(p_file, include):
+                        matched = True
+                        if p_file not in downloaded:
+                            to_download.add(p_file)
+                if not matched:
+                    # If it wasn't a glob pattern and didn't match anything in list, we add it directly
+                    if '*' not in include and '?' not in include:
+                        if include not in downloaded:
+                            to_download.add(include)
         except Exception as e:
-            print(f"Warning: Failed to download {include}: {e}")
+            print(f"Warning: Failed to process {current}: {e}")
             
     print(f"Pull completed successfully! Files saved to: {LOCAL_CONFIG_DIR}")
 
@@ -97,7 +124,7 @@ def upload_file(ip, relative_path, file_bytes):
     boundary = uuid.uuid4().hex
     headers = {'Content-Type': f'multipart/form-data; boundary={boundary}'}
     
-    # Construct multipart body for Moonraker file upload API
+    # Standardize filename format to forward slashes for the Moonraker upload API
     filename = relative_path.replace(os.sep, '/')
     body = (
         f"--{boundary}\r\n"
