@@ -13,7 +13,7 @@ if ($tasks) {
         Write-Host "[+] Removed task from path: $($task.TaskPath)" -ForegroundColor Green
     }
     
-    # Kill any lingering background processes to free up COM3
+    # Kill any lingering background processes to free up COM4
     Write-Host "[*] Cleaning up lingering processes..." -ForegroundColor Cyan
     Stop-Process -Name "pythonw" -Force -ErrorAction SilentlyContinue
     Write-Host "[+] Cleanup Complete." -ForegroundColor Green

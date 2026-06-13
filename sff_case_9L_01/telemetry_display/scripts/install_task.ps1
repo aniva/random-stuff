@@ -1,6 +1,6 @@
 # --- Configuration ---
 $TaskName   = "SFF_Telemetry_Daemon"
-$ScriptPath = "D:\Users\me\Documents\projects\random-stuff\sff_case_9L_01\telemetry_display\scripts\telemetry_stream.py"
+$ScriptPath = Join-Path $PSScriptRoot "telemetry_stream.py"
 $PioPythonW = "$env:USERPROFILE\.platformio\penv\Scripts\pythonw.exe"
 
 # --- 1. Pre-Flight Checks ---
@@ -27,7 +27,7 @@ Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue | ForEach-Ob
     Write-Host "[+] Removed old task registration." -ForegroundColor Gray
 }
 
-# Kill any background pythonw instances to free up COM3
+# Kill any background pythonw instances to free up COM4
 Write-Host "[*] Freeing up COM port..." -ForegroundColor Cyan
 Stop-Process -Name "pythonw" -Force -ErrorAction SilentlyContinue
 
@@ -45,7 +45,7 @@ $Trigger.Delay = "PT30S"
 $Principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive -RunLevel Highest
 
 # Define Settings (Important for SFF portability)
-$Settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+$Settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
 
 # Register the Task in the root library
 Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Trigger -Principal $Principal -Settings $Settings -Force

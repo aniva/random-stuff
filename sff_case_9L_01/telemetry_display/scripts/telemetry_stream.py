@@ -118,7 +118,7 @@ def main():
             serPort.dtr = False
             serPort.rts = False
             serPort.open() # Safely open with transistors disabled
-        except serial.SerialException:
+        except Exception:
             time.sleep(5.0)
 
     while True:
@@ -151,7 +151,7 @@ def main():
                     serPort.dtr = False
                     serPort.rts = False
                     serPort.open()
-                except serial.SerialException:
+                except Exception:
                     time.sleep(5.0)
         
         time.sleep(POLL_INTERVAL)
