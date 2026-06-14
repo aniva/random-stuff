@@ -12,14 +12,26 @@
     "is_custom_defined": "0",
     "version": "1.9.0.0",
     "inherits": "Generic PETG @Qidi Q2 0.4 nozzle",
+    "filament_max_volumetric_speed": [
+        "8"
+    ],
+    "fan_min_speed": [
+        "10"
+    ],
+    "fan_max_speed": [
+        "30"
+    ],
     "default_filament_colour": [
         "#FF0000"
     ],
+    "filament_flow_ratio": [
+        "1.04"
+    ],
     "nozzle_temperature": [
-        "295"
+        "290"
     ],
     "nozzle_temperature_initial_layer": [
-        "295"
+        "290"
     ],
     "textured_plate_temp": [
         "75"
