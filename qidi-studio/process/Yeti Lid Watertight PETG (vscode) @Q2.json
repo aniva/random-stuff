@@ -30,5 +30,12 @@
     "brim_type": "outer_only",
     "brim_width": "8",
     "enable_support": "1",
-    "support_type": "tree(auto)"
+    "support_type": "tree(auto)",
+    "support_top_z_distance": "0.15",
+    "support_interface_pattern": "concentric",
+    "support_interface_spacing": "0.1",
+    "support_interface_speed": [
+        "30"
+    ],
+    "support_object_xy_distance": "0.4"
 }

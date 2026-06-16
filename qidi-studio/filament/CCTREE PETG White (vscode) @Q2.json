@@ -67,7 +67,7 @@
         "35"
     ],
     "overhang_fan_speed": [
-        "45"
+        "75"
     ],
     "filament_z_hop": [
         "0.4"
