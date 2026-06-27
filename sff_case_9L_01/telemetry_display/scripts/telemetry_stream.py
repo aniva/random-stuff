@@ -115,6 +115,7 @@ def main():
             serPort.port = COM_PORT
             serPort.baudrate = BAUD_RATE
             serPort.timeout = 1
+            serPort.write_timeout = 1
             serPort.dtr = False
             serPort.rts = False
             serPort.open() # Safely open with transistors disabled
@@ -148,6 +149,7 @@ def main():
                     serPort.port = COM_PORT
                     serPort.baudrate = BAUD_RATE
                     serPort.timeout = 1
+                    serPort.write_timeout = 1
                     serPort.dtr = False
                     serPort.rts = False
                     serPort.open()
