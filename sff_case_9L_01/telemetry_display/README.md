@@ -173,3 +173,29 @@ flowchart LR
    pio run --target upload
    ```
 5. Configure and launch the host daemon — see `scripts/telemetry_stream.py`.
+
+---
+
+## 6. Troubleshooting & Recovery Protocols
+
+SFF builds with compact internal routing often experience transient USB power fluctuations or electromagnetic interference (EMI) during high-load actions (e.g., large USB file transfers). Use these protocols to recover from a halted telemetry state.
+
+### 6.1. Symptom: LCD Displays Red "LHM SERVER OFFLINE" Error
+This indicates the ESP32-C6 is active and communicating over serial, but the Python daemon cannot query LibreHardwareMonitor.
+
+1. **Verify LHM Process:** Confirm `LibreHardwareMonitor.exe` is running in your Windows System Tray. If it is missing, launch it as Administrator from `dependencies/LHM/LibreHardwareMonitor.exe`.
+2. **Handle LHM Startup Crash:** If LibreHardwareMonitor starts and then crashes immediately, the local settings file is likely corrupt:
+   - Navigate to the `dependencies/LHM/` folder.
+   - Delete or rename the bloated `LibreHardwareMonitor.config` file.
+   - Relaunch `LibreHardwareMonitor.exe` as Administrator. LHM will generate a fresh config.
+   - **Crucial Step:** In the LibreHardwareMonitor GUI menu, go to **Options -> Web Server** and select **Run** to enable the JSON API (default port `8085`).
+3. **Check Firewall/Port Conflict:** Ensure another application is not binding to port `8085`.
+
+### 6.2. Symptom: Display Stalled on Standby ("SYS NOMINAL / Awaiting Daemon...")
+This indicates the ESP32-C6 is active but has not received a valid data payload over the serial connection for over 8 seconds.
+
+1. **Verify COM Port Status:** Check that the ESP32-C6 is correctly enumerated on `COM4` via Device Manager.
+2. **Execute Daemon Restart:**
+   - Right-click [manage_task.bat](file:///d:/Users/me/Documents/projects/random-stuff/sff_case_9L_01/telemetry_display/scripts/manage_task.bat) in the `scripts/` folder and choose **Run as Administrator**.
+   - Select option **`[3] Restart Telemetry Task`**.
+   - This script elevates, stops the scheduled task, force-terminates any hung background `pythonw.exe` processes (unlocking the COM port), and restarts the stream.
