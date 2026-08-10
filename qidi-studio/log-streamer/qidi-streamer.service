@@ -1,0 +1,17 @@
+[Unit]
+Description=QIDI 3D Printer Multi-Layer Log & Telemetry Streamer
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=me
+Group=me
+Environment="PRINTER_IP=192.168.1.27"
+Environment="LOG_DIR=/var/log/remote/qidi"
+ExecStart=/home/me/repos/home/.venv/bin/python3 /home/me/repos/random-stuff/qidi-studio/log-streamer/qidi_streamer.py
+Restart=always
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target

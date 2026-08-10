@@ -35,7 +35,7 @@ def http_get(ip, path):
     path = path.replace('\\', '/')
     url = f"http://{ip}{path}"
     try:
-        with urllib.request.urlopen(url, timeout=10) as response:
+        with urllib.request.urlopen(url, timeout=120) as response:
             return response.read()
     except urllib.error.URLError as e:
         print(f"HTTP GET failed to {url}: {e}")
@@ -46,7 +46,7 @@ def http_post(ip, path, data=None, headers=None):
     url = f"http://{ip}{path}"
     req = urllib.request.Request(url, data=data, headers=headers or {}, method='POST')
     try:
-        with urllib.request.urlopen(req, timeout=10) as response:
+        with urllib.request.urlopen(req, timeout=120) as response:
             return response.read()
     except urllib.error.URLError as e:
         print(f"HTTP POST failed to {url}: {e}")
@@ -164,6 +164,15 @@ def upload_file(ip, relative_path, file_bytes):
     
     return http_post(ip, "/server/files/upload?root=config", data=body, headers=headers)
 
+def get_remote_file_content(ip, path):
+    path = path.replace('\\', '/')
+    url = f"http://{ip}{path}"
+    try:
+        with urllib.request.urlopen(url, timeout=10) as response:
+            return response.read()
+    except Exception:
+        return None
+
 def push_configs(ip):
     if not os.path.exists(LOCAL_CONFIG_DIR):
         print(f"Error: Local configuration directory {LOCAL_CONFIG_DIR} does not exist. Run pull first.")
@@ -181,15 +190,28 @@ def push_configs(ip):
         print("No files found to upload.")
         return
         
-    print(f"Uploading {len(files_to_upload)} files to printer config root...")
+    print("Checking which files have modifications...")
+    uploaded_any = False
     for full_path, rel_path in files_to_upload:
-        print(f"Uploading {rel_path}...")
-        with open(full_path, 'rb') as f:
-            content = f.read()
-        upload_file(ip, rel_path, content)
+        url_rel_path = rel_path.replace('\\', '/')
         
-    print("Upload completed successfully!")
-    restart_klipper(ip)
+        with open(full_path, 'rb') as f:
+            local_content = f.read()
+            
+        remote_content = get_remote_file_content(ip, f"/server/files/config/{url_rel_path}")
+        if remote_content == local_content:
+            print(f"Skipping {rel_path} (no changes)")
+            continue
+            
+        print(f"Uploading {rel_path}...")
+        upload_file(ip, rel_path, local_content)
+        uploaded_any = True
+        
+    if uploaded_any:
+        print("Upload completed successfully!")
+        restart_klipper(ip)
+    else:
+        print("All files are up-to-date. No upload needed.")
 
 def restart_klipper(ip):
     print("Triggering Klipper service restart...")
