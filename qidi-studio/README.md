@@ -73,7 +73,16 @@ Here is what it looks like when QIDI Studio successfully loads the agent-generat
 * **`prepare_windows.cmd`**: The Windows batch script that links your AppData folder to this repository.
 * **`prepare_windows.md`**: Detailed, step-by-step instructions on how to run the setup script safely and restore any backups.
 * **`agents.md`**: A comprehensive instruction manual written specifically for AI agents. It details the strict JSON schemas, mandatory attributes, and specific naming conventions required to generate valid QIDI Studio profiles programmatically without corrupting the slicer.
+* **`printer_upgrade_guide.md`**: Guide for recovering custom configurations after QIDI firmware updates and managing real-time log streaming to `ai-box` (`192.168.1.5`).
 * **`filament/`, `process/`, `machine/`**: The directories where your custom slicer JSON profiles are stored and version-controlled.
+
+## Firmware Updates & Config Recovery
+
+When QIDI releases an official OTA Firmware Update for the printer:
+
+1. All custom settings are safely preserved in this Git repository (`printer_config/`).
+2. Run `python3 scripts/sync_printer.py push` to re-apply custom fan limits, unload crash fixes, thermal sensors, and automatically restore rsyslog log streaming to `ai-box` (`192.168.1.5`).
+3. See [printer_upgrade_guide.md](printer_upgrade_guide.md) for detailed recovery and log streaming procedures.
 
 ## Getting Started
 
@@ -85,3 +94,4 @@ To link your local QIDI Studio installation to this project:
 4. Restart QIDI Studio. 
 
 You are now ready to version-control your profiles and let AI agents generate new ones for you automatically!
+

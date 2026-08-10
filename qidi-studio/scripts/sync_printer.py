@@ -7,6 +7,8 @@ import urllib.request
 import urllib.error
 import uuid
 import fnmatch
+import subprocess
+
 
 # Base directories
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -207,11 +209,30 @@ def push_configs(ip):
         upload_file(ip, rel_path, local_content)
         uploaded_any = True
         
+    ensure_log_streaming(ip)
     if uploaded_any:
         print("Upload completed successfully!")
         restart_klipper(ip)
     else:
-        print("All files are up-to-date. No upload needed.")
+        print("All files are up-to-date.")
+
+def ensure_log_streaming(ip):
+    print("Checking log streaming configuration to ai-box (192.168.1.5)...")
+    check_cmd = [
+        "sshpass", "-p", "makerbase", "ssh", "-o", "StrictHostKeyChecking=no", f"mks@{ip}",
+        "grep -q '192.168.1.5' /etc/rsyslog.d/50-remote.conf 2>/dev/null && systemctl is-active --quiet rsyslog"
+    ]
+    res = subprocess.run(check_cmd)
+    if res.returncode == 0:
+        print("Log streaming to ai-box (192.168.1.5) is ACTIVE and VERIFIED.")
+    else:
+        print("Log streaming config missing or rsyslog inactive. Restoring rsyslog configuration...")
+        fix_cmd = [
+            "sshpass", "-p", "makerbase", "ssh", "-o", "StrictHostKeyChecking=no", f"mks@{ip}",
+            "echo makerbase | sudo -S bash -c \"echo '*.* @192.168.1.5:514' > /etc/rsyslog.d/50-remote.conf && systemctl restart rsyslog\" && logger -t qidi-printer 'Log streaming configuration restored to ai-box'"
+        ]
+        subprocess.run(fix_cmd)
+        print("Log streaming configuration successfully restored to ai-box.")
 
 def restart_klipper(ip):
     print("Triggering Klipper service restart...")
