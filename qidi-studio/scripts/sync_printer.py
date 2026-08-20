@@ -220,19 +220,26 @@ def ensure_log_streaming(ip):
     print("Checking log streaming configuration to ai-box (192.168.1.5)...")
     check_cmd = [
         "sshpass", "-p", "makerbase", "ssh", "-o", "StrictHostKeyChecking=no", f"mks@{ip}",
-        "grep -q '192.168.1.5' /etc/rsyslog.d/50-remote.conf 2>/dev/null && systemctl is-active --quiet rsyslog"
+        "grep -q 'imfile' /etc/rsyslog.d/50-remote.conf 2>/dev/null && grep -q 'klippy.log' /etc/rsyslog.d/50-remote.conf 2>/dev/null && systemctl is-active --quiet rsyslog"
     ]
     res = subprocess.run(check_cmd)
     if res.returncode == 0:
-        print("Log streaming to ai-box (192.168.1.5) is ACTIVE and VERIFIED.")
+        print("Log streaming (systemd + klippy.log + moonraker.log) to ai-box (192.168.1.5) is ACTIVE and VERIFIED.")
     else:
-        print("Log streaming config missing or rsyslog inactive. Restoring rsyslog configuration...")
+        print("Log streaming config missing imfile/klippy stream. Restoring full rsyslog configuration...")
+        rsyslog_conf = (
+            'module(load=\\"imfile\\")\\n'
+            'input(type=\\"imfile\\" File=\\"/home/mks/printer_data/logs/klippy.log\\" Tag=\\"klippy\\" Severity=\\"info\\" Facility=\\"local0\\")\\n'
+            'input(type=\\"imfile\\" File=\\"/home/mks/printer_data/logs/moonraker.log\\" Tag=\\"moonraker\\" Severity=\\"info\\" Facility=\\"local0\\")\\n'
+            '*.* @192.168.1.5:514\\n'
+        )
         fix_cmd = [
             "sshpass", "-p", "makerbase", "ssh", "-o", "StrictHostKeyChecking=no", f"mks@{ip}",
-            "echo makerbase | sudo -S bash -c \"echo '*.* @192.168.1.5:514' > /etc/rsyslog.d/50-remote.conf && systemctl restart rsyslog\" && logger -t qidi-printer 'Log streaming configuration restored to ai-box'"
+            f'echo makerbase | sudo -S bash -c "printf \'{rsyslog_conf}\' > /etc/rsyslog.d/50-remote.conf && systemctl restart rsyslog" && logger -t qidi-printer "Log streaming configuration updated with klippy.log and moonraker.log"'
         ]
         subprocess.run(fix_cmd)
         print("Log streaming configuration successfully restored to ai-box.")
+
 
 def restart_klipper(ip):
     print("Triggering Klipper service restart...")
