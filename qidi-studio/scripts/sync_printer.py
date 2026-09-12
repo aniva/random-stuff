@@ -217,21 +217,22 @@ def push_configs(ip):
         print("All files are up-to-date.")
 
 def ensure_log_streaming(ip):
-    print("Checking log streaming configuration to ai-box (192.168.1.5)...")
+    ai_box_ip = "10.44.55.11"
+    print(f"Checking log streaming configuration to ai-box ({ai_box_ip})...")
     check_cmd = [
         "sshpass", "-p", "makerbase", "ssh", "-o", "StrictHostKeyChecking=no", f"mks@{ip}",
-        "grep -q 'imfile' /etc/rsyslog.d/50-remote.conf 2>/dev/null && grep -q 'klippy.log' /etc/rsyslog.d/50-remote.conf 2>/dev/null && systemctl is-active --quiet rsyslog"
+        f"grep -q 'imfile' /etc/rsyslog.d/50-remote.conf 2>/dev/null && grep -q 'klippy.log' /etc/rsyslog.d/50-remote.conf 2>/dev/null && grep -q '@{ai_box_ip}:514' /etc/rsyslog.d/50-remote.conf 2>/dev/null && systemctl is-active --quiet rsyslog"
     ]
     res = subprocess.run(check_cmd)
     if res.returncode == 0:
-        print("Log streaming (systemd + klippy.log + moonraker.log) to ai-box (192.168.1.5) is ACTIVE and VERIFIED.")
+        print(f"Log streaming (systemd + klippy.log + moonraker.log) to ai-box ({ai_box_ip}) is ACTIVE and VERIFIED.")
     else:
-        print("Log streaming config missing imfile/klippy stream. Restoring full rsyslog configuration...")
+        print(f"Log streaming config missing or pointing to stale IP. Restoring rsyslog configuration to {ai_box_ip}...")
         rsyslog_conf = (
             'module(load=\\"imfile\\")\\n'
             'input(type=\\"imfile\\" File=\\"/home/mks/printer_data/logs/klippy.log\\" Tag=\\"klippy\\" Severity=\\"info\\" Facility=\\"local0\\")\\n'
             'input(type=\\"imfile\\" File=\\"/home/mks/printer_data/logs/moonraker.log\\" Tag=\\"moonraker\\" Severity=\\"info\\" Facility=\\"local0\\")\\n'
-            '*.* @192.168.1.5:514\\n'
+            f'*.* @{ai_box_ip}:514\\n'
         )
         fix_cmd = [
             "sshpass", "-p", "makerbase", "ssh", "-o", "StrictHostKeyChecking=no", f"mks@{ip}",
