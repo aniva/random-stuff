@@ -153,4 +153,23 @@ Used for optical transparency (requires 0% fan and slow speeds).
 ```
 
 ---
+
+## 🛠️ QIDI Box Troubleshooting & Diagnostic Protocol
+Whenever the user reports an issue with the QIDI Box (box disappearing from QIDI Studio, slot mapping errors, sync failures, or offline symptoms):
+1. **Immediately run the diagnostic probe:**
+   ```bash
+   python3 scripts/check_box.py
+   ```
+   *(Or query `http://<printer_ip>/printer/objects/query?save_variables=variables`)*
+2. **Isolate the root cause instantly:**
+   - **Hardware & Moonraker OK (`mcu_box1` connected, `box_count: 1`):** The hardware, USB connection, MCU, and Moonraker are 100% healthy. The issue is strictly client-side:
+     - QIDI Studio's WebSocket dropped or failed to subscribe after a Wi-Fi blip or printer reboot $\rightarrow$ **Restart QIDI Studio**.
+     - Or the active project was loaded with a non-box printer preset $\rightarrow$ switch printer profile to **`Q2 0.4 nozzle 01`**.
+   - **Hardware Fault (`mcu_box1` missing or `box_count: 0`):**
+     - Check physical USB-C cable between printer and QIDI Box.
+     - Check 24V power cord to the QIDI Box.
+   - **Sync Error ("There are no compatible filaments"):**
+     - Check `filament_slot*_material` in Klipper vs the active filament profile in QIDI Studio (e.g. ABS vs PLA).
+
+---
 *Author: Aniva*
