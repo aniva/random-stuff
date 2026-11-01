@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aniva VPN — Инструкция по настройке Samsung / Android</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 24px 16px;
+    color: #24292f;
+    background: #f6f8fa;
+  }
+  .content {
+    background: #ffffff;
+    padding: 36px 40px;
+    border-radius: 12px;
+    border: 1px solid #d0d7de;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  }
+  h1 {
+    color: #0969da;
+    border-bottom: 2px solid #eaeef2;
+    padding-bottom: 12px;
+    margin-top: 0;
+    font-size: 1.75em;
+  }
+  h2 {
+    color: #1f2328;
+    border-bottom: 1px solid #eaeef2;
+    padding-bottom: 8px;
+    margin-top: 36px;
+    font-size: 1.35em;
+  }
+  h3 {
+    color: #24292f;
+    margin-top: 24px;
+    font-size: 1.1em;
+  }
+  code {
+    background: #eff1f3;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    color: #cf222e;
+  }
+  a {
+    color: #0969da;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+  .img-box {
+    text-align: center;
+    margin: 20px 0;
+    background: #fcfcfc;
+    padding: 12px;
+    border: 1px solid #e1e4e8;
+    border-radius: 8px;
+  }
+  .img-box img {
+    max-width: 100%;
+    max-height: 540px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  .caption {
+    font-size: 0.88em;
+    color: #57606a;
+    margin-top: 8px;
+    font-weight: 500;
+  }
+  blockquote {
+    border-left: 4px solid #0969da;
+    margin: 0 0 20px;
+    padding: 12px 18px;
+    background: #ddf4ff;
+    color: #0969da;
+    border-radius: 0 6px 6px 0;
+    font-weight: 500;
+  }
+  hr {
+    border: none;
+    border-top: 1px solid #d0d7de;
+    margin: 32px 0;
+  }
+</style>
+</head>
+<body>
+<div class="content">
+<h1>Инструкция по настройке Aniva VPN на смартфонах Samsung Galaxy (Android)</h1>
+<h1>Samsung Galaxy / Android Setup Guide for Aniva VPN (VLESS Reality)</h1>
+<br>
+<blockquote><strong>Назначение документа</strong>: Пошаговое руководство со скриншотами для подключения к защищённому VLESS Reality VPN на устройствах Samsung с оболочкой One UI (Android 13 / 14 / 15).</blockquote>
+<br>
+<hr>
+<br>
+<h2>Содержание / Table of Contents</h2>
+<p>1. <a href="#этап-1-регистрация-через-telegram-бота" target="_blank">Этап 1: Регистрация через Telegram-бота</a></p>
+<p>2. <a href="#этап-2-скачивание-клиента-v2rayng-с-github" target="_blank">Этап 2: Скачивание клиента v2rayNG с GitHub</a></p>
+<p>3. <a href="#этап-3-установка-приложения-и-обход-samsung-auto-blocker" target="_blank">Этап 3: Установка приложения и обход Samsung Auto Blocker</a></p>
+<p>4. <a href="#этап-4-импорт-настроек-подключения-из-буфера" target="_blank">Этап 4: Импорт настроек подключения из буфера</a></p>
+<p>5. <a href="#этап-5-подключение-разрешения-и-проверка-связи" target="_blank">Этап 5: Подключение, разрешения и проверка связи</a></p>
+<p>6. <a href="#частые-проблемы-и-тонкая-настройка-samsung" target="_blank">Частые проблемы и тонкая настройка Samsung</a></p>
+<br>
+<hr>
+<br>
+<h2>Этап 1: Регистрация через Telegram-бота</h2>
+<br>
+<p>1. Откройте Telegram и найдите бота: <strong><code>@aniva_vpn_bot</code></strong>.</p>
+<p>2. Нажмите <strong>Start</strong> (или отправьте команду <code>/start</code>).</p>
+<p>3. Бот попросит ввести:</p>
+<p>   * <strong>Ваше имя</strong> (например, <code>Alexey Ivanov</code>).</p>
+<p>   * <strong>Ваш Email</strong> (для отправки кода подтверждения).</p>
+<p>4. На указанный email придёт 6-значный код. Отправьте этот код боту.</p>
+<p>5. Бот подтвердит почту и отправит запрос администратору на подтверждение доступа.</p>
+<br>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_132021_Telegram.jpg" alt="Шаг 1: Запуск бота и ввод данных"><p class="caption">Шаг 1: Запуск бота и ввод данных</p></div>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_132040_Telegram.jpg" alt="Шаг 2: Ввод кода подтверждения из Email"><p class="caption">Шаг 2: Ввод кода подтверждения из Email</p></div>
+<br>
+<hr>
+<br>
+<h2>Этап 2: Скачивание клиента v2rayNG с GitHub</h2>
+<br>
+<p>Для работы с протоколом VLESS Reality на Android используется лучший открытый клиент — <strong>v2rayNG</strong>.</p>
+<br>
+<p>1. Перейдите на официальную страницу релизов:</p>
+<p>   👉 <a href="https://github.com/2dust/v2rayNG/releases/latest" target="_blank">https://github.com/2dust/v2rayNG/releases/latest</a></p>
+<p>2. В блоке <strong>Assets</strong> скачайте файл для процессоров Samsung (64-битный ARM):</p>
+<p>   <em> 🌟 <strong><code>v2rayNG_..._arm64-v8a.apk</code></strong> </em>(или универсальный <code>v2rayNG_..._universal.apk</code>)*.</p>
+<p>3. В браузере (Firefox / Chrome / Samsung Internet) подтвердите загрузку.</p>
+<br>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_132139_Firefox.jpg" alt="Шаг 3: Страница релизов GitHub"><p class="caption">Шаг 3: Страница релизов GitHub</p></div>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_132603_Firefox.jpg" alt="Шаг 4: Выбор файла arm64-v8a.apk"><p class="caption">Шаг 4: Выбор файла arm64-v8a.apk</p></div>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_132616_Firefox.jpg" alt="Шаг 5: Подтверждение загрузки в браузере"><p class="caption">Шаг 5: Подтверждение загрузки в браузере</p></div>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_132626_Firefox.jpg" alt="Шаг 6: Загрузка файла завершена"><p class="caption">Шаг 6: Загрузка файла завершена</p></div>
+<br>
+<hr>
+<br>
+<h2>Этап 3: Установка приложения и обход Samsung Auto Blocker</h2>
+<br>
+<p>На смартфонах Samsung One UI включена функция <strong>Auto Blocker (Автоблокировка)</strong>, которая по умолчанию запрещает установку файлов не из Galaxy Store / Google Play.</p>
+<br>
+<p>1. Откройте стандартное приложение <strong>Мои файлы (My Files)</strong> $\rightarrow$ папку <strong>Загрузки (Downloads)</strong>.</p>
+<p>2. Нажмите на скачанный файл <code>v2rayNG_..._arm64-v8a.apk</code>.</p>
+<p>3. Если появится предупреждение <em>"Установка неизвестных приложений"</em> $\rightarrow$ нажмите <strong>Настройки (Settings)</strong> и включите переключатель разрешения для приложения <em>Мои файлы</em>.</p>
+<p>4. Если Samsung покажет предупреждение <strong>Auto Blocker (Автоблокировка)</strong>:</p>
+<p>   * Перейдите в <strong>Настройки телефона $\rightarrow$ Безопасность и конфиденциальность $\rightarrow$ Автоблокировка (Auto Blocker)</strong>.</p>
+<p>   <em> Временно отключите (Toggle Off) или отключите опцию </em>"Блокировать приложения из неавторизованных источников"*.</p>
+<p>5. Нажмите <strong>Установить (Install)</strong>.</p>
+<p>6. После установки нажмите <strong>Открыть (Open)</strong>.</p>
+<br>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_132650_One%20UI%20Home.jpg" alt="Шаг 7: Открытие приложения Мои файлы"><p class="caption">Шаг 7: Открытие приложения Мои файлы</p></div>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_132655_My%20Files.jpg" alt="Шаг 8: Папка Загрузки"><p class="caption">Шаг 8: Папка Загрузки</p></div>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_132700_My%20Files.jpg" alt="Шаг 9: Запуск APK-установщика"><p class="caption">Шаг 9: Запуск APK-установщика</p></div>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_132708_Package%20installer.jpg" alt="Шаг 10: Установщик пакетов"><p class="caption">Шаг 10: Установщик пакетов</p></div>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_132718_My%20Files.jpg" alt="Шаг 11: Запрос разрешения на установку"><p class="caption">Шаг 11: Запрос разрешения на установку</p></div>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_132725_Settings.jpg" alt="Шаг 12: Включение разрешения в Настройках"><p class="caption">Шаг 12: Включение разрешения в Настройках</p></div>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_132732_Package%20installer.jpg" alt="Шаг 13: Предупреждение системы безопасности"><p class="caption">Шаг 13: Предупреждение системы безопасности</p></div>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_132748_Android%20System.jpg" alt="Шаг 14: Диагностика системы Android"><p class="caption">Шаг 14: Диагностика системы Android</p></div>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_132814_Settings.jpg" alt="Шаг 15: Раздел Безопасность и конфиденциальность"><p class="caption">Шаг 15: Раздел Безопасность и конфиденциальность</p></div>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_132837_Auto%20Blocker.jpg" alt="Шаг 16: Отключение функции Auto Blocker на Samsung"><p class="caption">Шаг 16: Отключение функции Auto Blocker на Samsung</p></div>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_132910_Package%20installer.jpg" alt="Шаг 17: Финальное подтверждение установки"><p class="caption">Шаг 17: Финальное подтверждение установки</p></div>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_132927_v2rayNG.jpg" alt="Шаг 18: Приложение v2rayNG установлено"><p class="caption">Шаг 18: Приложение v2rayNG установлено</p></div>
+<br>
+<hr>
+<br>
+<h2>Этап 4: Импорт настроек подключения из буфера</h2>
+<br>
+<p>1. Вернитесь в <strong>Telegram</strong> в диалог с ботом <strong><code>@aniva_vpn_bot</code></strong>.</p>
+<p>2. После одобрения администратором бот пришлет сообщение со статусом <code>Approved ✅</code>, персональной ссылкой <code>vless://...</code> и QR-кодом.</p>
+<p>3. <strong>Скопируйте</strong> текст ссылки <code>vless://...</code> в буфер обмена телефона (долгое нажатие $\rightarrow$ Скопировать).</p>
+<p>4. Откройте приложение <strong>v2rayNG</strong>.</p>
+<p>5. Нажмите на значок <strong><code>+</code></strong> в правом верхнем углу.</p>
+<p>6. Выберите пункт <strong>Импорт конфигурации из буфера обмена (Import config from Clipboard)</strong>.</p>
+<p>7. Профиль сервера моментально появится в списке.</p>
+<br>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_133126_Telegram.jpg" alt="Шаг 19: Копирование VLESS-ссылки из Telegram"><p class="caption">Шаг 19: Копирование VLESS-ссылки из Telegram</p></div>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_133158_v2rayNG.jpg" alt="Шаг 20: Меню добавления в v2rayNG (+)"><p class="caption">Шаг 20: Меню добавления в v2rayNG (+)</p></div>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_133204_v2rayNG.jpg" alt="Шаг 21: Выбор Импорт из буфера обмена"><p class="caption">Шаг 21: Выбор Импорт из буфера обмена</p></div>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_133217.jpg" alt="Шаг 22: Сервер успешно добавлен в список"><p class="caption">Шаг 22: Сервер успешно добавлен в список</p></div>
+<br>
+<hr>
+<br>
+<h2>Этап 5: Подключение, разрешения и проверка связи</h2>
+<br>
+<p>1. Нажмите на добавленный сервер в списке (слева появится зеленая вертикальная полоска активности).</p>
+<p>2. Нажмите на круглую кнопку <strong>V</strong> в правом нижнем углу экрана для запуска.</p>
+<p>3. При запросе:</p>
+<p>   <em> <strong>Устройства поблизости (Nearby devices)</strong> $\rightarrow$ выберите <strong>Не разрешать (Don't allow)</strong> </em>(это не требуется для VPN)*.</p>
+<p>   * <strong>Запрос на подключение (Замочек / Ключ VPN)</strong> $\rightarrow$ нажмите <strong>ОК / Разрешить (OK / Allow)</strong>.</p>
+<p>4. Нажмите на нижнюю плашку <strong>"Подключено, нажмите для проверки связи"</strong>:</p>
+<p>   * Появится реальный пинг (задержка в миллисекундах, например <code>180 ms</code>).</p>
+<p>5. Откройте любой браузер и проверьте свой внешний IP (например, на сайте <a href="https://ipinfo.io" target="_blank">ipinfo.io</a>).</p>
+<br>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_133228_Permission%20controller.jpg" alt="Шаг 23: Отклонение разрешения Устройства поблизости"><p class="caption">Шаг 23: Отклонение разрешения Устройства поблизости</p></div>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_133412_Permission%20controller.jpg" alt="Шаг 24: Разрешение создания VPN-туннеля (Ключ)"><p class="caption">Шаг 24: Разрешение создания VPN-туннеля (Ключ)</p></div>
+<div class="img-box"><img src="screenshots/Screenshot_20261101_133427_v2rayNG.jpg" alt="Шаг 25: Успешное подключение и зеленый статус связи"><p class="caption">Шаг 25: Успешное подключение и зеленый статус связи</p></div>
+<br>
+<hr>
+<br>
+<h2>Частые проблемы и тонкая настройка Samsung</h2>
+<br>
+<h3>1. Отключение оптимизации аккумулятора (чтобы Samsung не выключал VPN в фоне)</h3>
+<p>1. Откройте <strong>Настройки $\rightarrow$ Приложения $\rightarrow$ v2rayNG</strong>.</p>
+<p>2. Выберите <strong>Батарея (Battery)</strong>.</p>
+<p>3. Установите режим <strong>Не ограничено (Unrestricted)</strong>.</p>
+<br>
+<h3>2. Конфликт персонального DNS (Private DNS) на Samsung</h3>
+<p>Если в браузере не открываются сайты или появляется ошибка DNS:</p>
+<p>1. Откройте <strong>Настройки $\rightarrow$ Подключения $\rightarrow$ Другие настройки $\rightarrow$ Персональный DNS-сервер</strong>.</p>
+<p>2. Переключите его в положение <strong>Выключено (Off)</strong> или <strong>Автоматически (Automatic)</strong>.</p>
+<br>
+<h3>3. Режим раздельного туннелирования (Split Tunneling)</h3>
+<p>Если необходимо пускать через VPN только отдельные приложения (например, заблокированные сервисы):</p>
+<li>В <strong>v2rayNG</strong> откройте боковое меню $\rightarrow$ <strong>Настройки</strong> $\rightarrow$ <strong>Режим маршрутизации доменов</strong> $\rightarrow$ настройте правила обхода или выберите конкретные приложения в пункте <strong>Разделение трафика приложений</strong>.</li>
+</div>
+</body>
+</html>
