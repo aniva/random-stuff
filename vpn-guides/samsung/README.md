@@ -60,17 +60,17 @@
 5. Нажмите **Установить (Install)**.
 6. После установки нажмите **Открыть (Open)**.
 
-![Шаг 7: Открытие приложения Мои файлы](screenshots/Screenshot_20261101_132650_One%20UI%20Home.jpg)
-![Шаг 8: Папка Загрузки](screenshots/Screenshot_20261101_132655_My%20Files.jpg)
-![Шаг 9: Запуск APK-установщика](screenshots/Screenshot_20261101_132700_My%20Files.jpg)
-![Шаг 10: Установщик пакетов](screenshots/Screenshot_20261101_132708_Package%20installer.jpg)
-![Шаг 11: Запрос разрешения на установку](screenshots/Screenshot_20261101_132718_My%20Files.jpg)
+![Шаг 7: Открытие приложения Мои файлы](screenshots/Screenshot_20261101_132650_One_UI_Home.jpg)
+![Шаг 8: Папка Загрузки](screenshots/Screenshot_20261101_132655_My_Files.jpg)
+![Шаг 9: Запуск APK-установщика](screenshots/Screenshot_20261101_132700_My_Files.jpg)
+![Шаг 10: Установщик пакетов](screenshots/Screenshot_20261101_132708_Package_installer.jpg)
+![Шаг 11: Запрос разрешения на установку](screenshots/Screenshot_20261101_132718_My_Files.jpg)
 ![Шаг 12: Включение разрешения в Настройках](screenshots/Screenshot_20261101_132725_Settings.jpg)
-![Шаг 13: Предупреждение системы безопасности](screenshots/Screenshot_20261101_132732_Package%20installer.jpg)
-![Шаг 14: Диагностика системы Android](screenshots/Screenshot_20261101_132748_Android%20System.jpg)
+![Шаг 13: Предупреждение системы безопасности](screenshots/Screenshot_20261101_132732_Package_installer.jpg)
+![Шаг 14: Диагностика системы Android](screenshots/Screenshot_20261101_132748_Android_System.jpg)
 ![Шаг 15: Раздел Безопасность и конфиденциальность](screenshots/Screenshot_20261101_132814_Settings.jpg)
-![Шаг 16: Отключение функции Auto Blocker на Samsung](screenshots/Screenshot_20261101_132837_Auto%20Blocker.jpg)
-![Шаг 17: Финальное подтверждение установки](screenshots/Screenshot_20261101_132910_Package%20installer.jpg)
+![Шаг 16: Отключение функции Auto Blocker на Samsung](screenshots/Screenshot_20261101_132837_Auto_Blocker.jpg)
+![Шаг 17: Финальное подтверждение установки](screenshots/Screenshot_20261101_132910_Package_installer.jpg)
 ![Шаг 18: Приложение v2rayNG установлено](screenshots/Screenshot_20261101_132927_v2rayNG.jpg)
 
 ---
@@ -103,8 +103,8 @@
    * Появится реальный пинг (задержка в миллисекундах, например `180 ms`).
 5. Откройте любой браузер и проверьте свой внешний IP (например, на сайте [ipinfo.io](https://ipinfo.io)).
 
-![Шаг 23: Отклонение разрешения Устройства поблизости](screenshots/Screenshot_20261101_133228_Permission%20controller.jpg)
-![Шаг 24: Разрешение создания VPN-туннеля (Ключ)](screenshots/Screenshot_20261101_133412_Permission%20controller.jpg)
+![Шаг 23: Отклонение разрешения Устройства поблизости](screenshots/Screenshot_20261101_133228_Permission_controller.jpg)
+![Шаг 24: Разрешение создания VPN-туннеля (Ключ)](screenshots/Screenshot_20261101_133412_Permission_controller.jpg)
 ![Шаг 25: Успешное подключение и зеленый статус связи](screenshots/Screenshot_20261101_133427_v2rayNG.jpg)
 
 ---
