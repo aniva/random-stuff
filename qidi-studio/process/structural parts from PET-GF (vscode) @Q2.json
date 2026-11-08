@@ -1,6 +1,6 @@
 {
     "bottom_shell_layers": "5",
-    "filename_format": "{input_filename_base}_{filament_type[0]}_{print_time}.gcode",
+    "filename_format": "{input_filename_base}_{filament_type[0]}_{print_time}",
     "from": "User",
     "inherits": "0.20mm Standard @Q2",
     "name": "structural parts from PET-GF (vscode) @Q2",
