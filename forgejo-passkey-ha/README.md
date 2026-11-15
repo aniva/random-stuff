@@ -53,9 +53,11 @@ Designed for small private teams (≤20 devs) where:
 
 ---
 
-## Agentic CLI Usage (`fj`)
+## Agentic CLI Usage (`fj` & Agent Skill)
 
-Local AI agents can manage repos, branches, PRs, reviews, issues, and raw API calls using [`fj` (`forgejo-cli`)](https://crates.io/crates/forgejo-cli):
+See [skills/forgejo-client/SKILL.md](./skills/forgejo-client/SKILL.md) for a ready-to-use agent skill covering onboarding (`POST /request-access`), SSH/PAT verification, listing shared repos, creating/sharing repos, and opening/merging PRs.
+
+Local AI agents can also use [`fj` (`forgejo-cli`)](https://crates.io/crates/forgejo-cli):
 ```bash
 fj auth login --host https://git.home.internal --token <PAT>
 fj pr create --title "feat: ..."
