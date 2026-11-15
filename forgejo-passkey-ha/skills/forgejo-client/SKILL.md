@@ -16,6 +16,24 @@ export SSH_PORT="${SSH_PORT:-2222}"
 # export FORGEJO_PAT="..."
 ```
 
+## 0. VPN Setup & Requesting VPN Access (Start Here)
+
+Both `AUTH_HOST` and `GIT_HOST` (HTTPS `443` and SSH `2222`) are **VPN/private-LAN only**—none of the onboarding or Git endpoints are reachable from the public internet.
+
+1. **Install WireGuard** (or the team VPN client) on your machine.
+2. **Request VPN access from the admin** (out-of-band):
+   - Either ask the admin for a pre-built WireGuard `.conf` profile, **or** generate a local keypair and send only your **public** key:
+     ```bash
+     umask 077
+     wg genkey | tee ~/.ssh/wg_private.key | wg pubkey > ~/.ssh/wg_public.key
+     cat ~/.ssh/wg_public.key
+     ```
+3. **Activate the VPN tunnel** and verify internal DNS + HTTPS reachability before requesting a Forgejo account:
+   ```bash
+   curl -fsSI "https://${AUTH_HOST}" | head -n 5
+   ```
+   If resolution or connection times out, confirm the VPN tunnel is up and its DNS/AllowedIPs cover the private forge host.
+
 ## 1. Request Account & Get Approval (New User)
 
 1. Ensure an `ed25519` SSH key exists (create one if missing: `ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""`).
