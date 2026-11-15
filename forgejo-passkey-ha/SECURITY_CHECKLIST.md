@@ -33,7 +33,14 @@ Follow this checklist for **every** fresh deployment and **every** new developer
 ## 2. Adding a New User / Friend (Onboarding Checklist)
 
 1. **VPN Access:** Provision the friend's WireGuard/VPN peer with access **only** to `BIND_IP:443` and `BIND_IP:2222` + internal DNS for `GIT_DOMAIN` and `AUTH_DOMAIN`.
-2. **Create User in Pocket ID (Admin-Only):**
+2. **Request Access (Friend / Agent-Driven):**
+   - Once on the VPN, the friend (or their local agent) can submit an onboarding request to notify the admin via Telegram:
+     ```bash
+     curl -X POST https://<AUTH_DOMAIN>/request-access \
+       -H "Content-Type: application/json" \
+       -d '{"username":"<desired_user>","email":"<email>","ssh_pubkey":"<ssh-ed25519 ...>","note":"optional"}'
+     ```
+3. **Create User in Pocket ID (Admin-Only):**
    - In Pocket ID **Administration → Users → Add User**, create their account as a **non-admin** user.
    - Generate a **one-time access link** (`docker exec mygit-pocket-id /app/pocket-id one-time-access-token <username>`) and send it securely.
 3. **Passkey Enrollment:**

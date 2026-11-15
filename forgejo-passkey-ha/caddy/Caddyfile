@@ -16,5 +16,10 @@ https://{$AUTH_DOMAIN} {
 		propagation_delay 30s
 		resolvers 8.8.8.8 9.9.9.9
 	}
-	reverse_proxy pocket-id:1411
+	handle /request-access {
+		reverse_proxy access-request:8090
+	}
+	handle {
+		reverse_proxy pocket-id:1411
+	}
 }

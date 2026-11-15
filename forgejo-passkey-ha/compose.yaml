@@ -110,6 +110,20 @@ services:
           - ${GIT_DOMAIN}
           - ${AUTH_DOMAIN}
 
+  access-request:
+    image: python:3.12-alpine
+    container_name: mygit-access-request
+    restart: unless-stopped
+    command: ["python3", "/app/server.py"]
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      GIT_DOMAIN: ${GIT_DOMAIN}
+    volumes:
+      - ./access-request/server.py:/app/server.py:ro
+    networks:
+      - proxy
+
 networks:
   backend:
     driver: bridge
