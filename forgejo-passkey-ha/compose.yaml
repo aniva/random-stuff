@@ -1,0 +1,118 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mygit-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-forgejo}
+      POSTGRES_USER: ${POSTGRES_USER:-forgejo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - ${DATA_DIR:-./data}/postgres:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-forgejo} -d ${POSTGRES_DB:-forgejo}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pocket-id:
+    image: ghcr.io/pocket-id/pocket-id:latest
+    container_name: mygit-pocket-id
+    restart: unless-stopped
+    environment:
+      APP_NAME: ${APP_NAME:-Home Git}
+      APP_URL: https://${AUTH_DOMAIN}
+      ENCRYPTION_KEY: ${POCKET_ID_ENCRYPTION_KEY:?POCKET_ID_ENCRYPTION_KEY is required}
+      TRUST_PROXY: "true"
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+    volumes:
+      - ${DATA_DIR:-./data}/pocket-id:/app/data
+    networks:
+      - backend
+      - proxy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:1411/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  forgejo:
+    image: codeberg.org/forgejo/forgejo:10-rootless
+    container_name: mygit-forgejo
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      USER_UID: ${PUID:-1000}
+      USER_GID: ${PGID:-1000}
+      FORGEJO__database__DB_TYPE: postgres
+      FORGEJO__database__HOST: postgres:5432
+      FORGEJO__database__NAME: ${POSTGRES_DB:-forgejo}
+      FORGEJO__database__USER: ${POSTGRES_USER:-forgejo}
+      FORGEJO__database__PASSWD: ${POSTGRES_PASSWORD}
+      FORGEJO__server__DOMAIN: ${GIT_DOMAIN}
+      FORGEJO__server__ROOT_URL: https://${GIT_DOMAIN}/
+      FORGEJO__server__SSH_DOMAIN: ${GIT_DOMAIN}
+      FORGEJO__server__SSH_PORT: ${SSH_PORT:-2222}
+      FORGEJO__server__SSH_LISTEN_PORT: 2222
+      FORGEJO__server__START_SSH_SERVER: "true"
+      # Passkey-only via Pocket ID OIDC (disable native password login)
+      FORGEJO__service__DISABLE_REGISTRATION: "false"
+      FORGEJO__service__ALLOW_ONLY_EXTERNAL_REGISTRATION: "true"
+      FORGEJO__service__ENABLE_INTERNAL_SIGNIN: "false"
+      FORGEJO__service__ENABLE_PASSWORD_SIGNIN_FORM: "false"
+      FORGEJO__service__REQUIRE_SIGNIN_VIEW: "true"
+      FORGEJO__repository__FORCE_PRIVATE: "true"
+      FORGEJO__oauth2_client__ENABLE_AUTO_REGISTRATION: "true"
+      # Allow admin-managed server-side pre-receive hooks
+      FORGEJO__security__DISABLE_GIT_HOOKS: "false"
+      # Push policy env for pre-receive hook
+      MAX_FILE_SIZE_MB: ${MAX_FILE_SIZE_MB:-25}
+    volumes:
+      - ${DATA_DIR:-./data}/forgejo:/var/lib/gitea
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - ./hooks/pre-receive:/var/lib/gitea/git/hooks/pre-receive.d/policy-check:ro
+    ports:
+      - "${BIND_IP:-0.0.0.0}:${SSH_PORT:-2222}:2222"
+    networks:
+      - backend
+      - proxy
+
+  caddy:
+    build:
+      context: ./caddy
+      dockerfile: Dockerfile.route53
+    container_name: mygit-caddy
+    restart: unless-stopped
+    depends_on:
+      - forgejo
+      - pocket-id
+    environment:
+      GIT_DOMAIN: ${GIT_DOMAIN}
+      AUTH_DOMAIN: ${AUTH_DOMAIN}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+    ports:
+      - "${BIND_IP:-0.0.0.0}:${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${DATA_DIR:-./data}/caddy/data:/data
+      - ${DATA_DIR:-./data}/caddy/config:/config
+    networks:
+      proxy:
+        aliases:
+          - ${GIT_DOMAIN}
+          - ${AUTH_DOMAIN}
+
+networks:
+  backend:
+    driver: bridge
+    internal: true
+  proxy:
+    driver: bridge

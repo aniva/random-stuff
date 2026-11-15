@@ -1,0 +1,20 @@
+# Uses ACME DNS-01 via AWS Route 53 for globally trusted TLS certs on VPN-only domains.
+# (For self-signed internal CA instead, replace the tls block with `tls internal`.)
+
+https://{$GIT_DOMAIN} {
+	tls {
+		dns route53
+		propagation_delay 30s
+		resolvers 8.8.8.8 9.9.9.9
+	}
+	reverse_proxy forgejo:3000
+}
+
+https://{$AUTH_DOMAIN} {
+	tls {
+		dns route53
+		propagation_delay 30s
+		resolvers 8.8.8.8 9.9.9.9
+	}
+	reverse_proxy pocket-id:1411
+}

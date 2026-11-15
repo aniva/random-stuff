@@ -1,0 +1,53 @@
+#!/bin/sh
+# Server-side pre-receive policy hook for Forgejo.
+# Enforces per-file size limits and blocks disallowed binary/archive MIME types.
+# Note: Git LFS pointer files are tiny text files and pass automatically.
+
+set -eu
+
+MAX_MB="${MAX_FILE_SIZE_MB:-25}"
+MAX_BYTES=$((MAX_MB * 1024 * 1024))
+ZERO_SHA="0000000000000000000000000000000000000000"
+
+while read -r oldrev newrev refname; do
+    # Skip branch/tag deletions
+    if [ "$newrev" = "$ZERO_SHA" ]; then
+        continue
+    fi
+
+    if [ "$oldrev" = "$ZERO_SHA" ]; then
+        files=$(git diff-tree --no-commit-id --name-only -r "$newrev")
+    else
+        files=$(git diff --name-only "$oldrev..$newrev")
+    fi
+
+    # Handle filenames safely line-by-line
+    printf '%s\n' "$files" | while IFS= read -r file; do
+        [ -z "$file" ] && continue
+
+        # Skip deleted files
+        if ! git rev-parse --verify "$newrev:$file" >/dev/null 2>&1; then
+            continue
+        fi
+
+        # 1. File size check
+        filesize=$(git cat-file -s "$newrev:$file" 2>/dev/null || echo 0)
+        if [ "$filesize" -gt "$MAX_BYTES" ]; then
+            echo "REJECTED: '$file' is $((filesize / 1024 / 1024)) MB (limit: ${MAX_MB} MB). Use Git LFS for large assets." >&2
+            exit 1
+        fi
+
+        # 2. Content-type / MIME-type check (if `file` utility is installed)
+        if command -v file >/dev/null 2>&1; then
+            mime_type=$(git cat-file blob "$newrev:$file" | file --brief --mime-type -)
+            case "$mime_type" in
+                application/x-executable|application/x-pie-executable|application/x-sharedlib|application/x-dosexec|application/zip|application/x-rar|application/x-7z-compressed)
+                    echo "REJECTED: '$file' has disallowed MIME type '$mime_type'. Use Git LFS or release artifacts." >&2
+                    exit 1
+                    ;;
+            esac
+        fi
+    done
+done
+
+exit 0

@@ -1,0 +1,13 @@
+# Environment secrets and runtime data
+.env
+.env.*
+!.env.example
+secrets/
+data/
+backups/
+*.dump
+*.sql.gz
+*.key
+*.pem
+.restic-pass
+compose.override.yaml
