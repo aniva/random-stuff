@@ -1,12 +1,13 @@
 # forgejo-passkey-ha
 
-Lightweight, VPN-only self-hosted Git forge (**Forgejo**) with **Passkey-only OIDC login** (**Pocket ID**), **PostgreSQL**, **Caddy** internal TLS, server-side push guardrails, and **Active/Standby** hourly replication over VPN.
+Lightweight, VPN-only self-hosted Git forge (**Forgejo**) with **Passkey-only OIDC login** (**Pocket ID**), **PostgreSQL**, **Caddy** TLS (Route 53 DNS-01), Telegram onboarding alerts (`/request-access`), server-side push guardrails, `restic` 12-hour dual-target backups, and **Active/Standby** replication over VPN.
 
 Designed for small private teams (≤20 devs) where:
 - The Git server is purely source-of-truth (all builds/CI/deployments run locally by developers or local AI agents).
-- Web logins use **Passkeys only** (your favorite secrets manager, FaceID/TouchID, or hardware key) via Pocket ID—no passwords, no TOTP.
-- Git transport uses **SSH keys**; AI agents use **`fj`** (`forgejo-cli`) + scoped PATs.
-- Standby lives on a second host over VPN, receiving hourly one-way snapshots from Primary.
+- Web logins use **Passkeys only** (FaceID/TouchID, Windows Hello, or hardware key) via Pocket ID—no passwords, no TOTP.
+- New users can submit `POST https://<AUTH_DOMAIN>/request-access` over VPN to notify the admin via Telegram.
+- Git transport uses **SSH keys**; AI agents use the [`forgejo-client` skill](./skills/forgejo-client/SKILL.md), REST API + scoped PATs, or **`fj`** (`forgejo-cli`).
+- Dual-target `restic` backups + optional Standby replication protect against single-drive failure or accidental deletion.
 
 ---
 

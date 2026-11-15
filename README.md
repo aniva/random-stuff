@@ -1,33 +1,37 @@
-# Aniva SFF & Slicer Workspace (`random-stuff`)
+# Aniva's Personal Monorepo (`random-stuff`)
 
-Welcome to my personal monorepo hosting custom hardware designs, 3D printing profiles, and micro-controller telemetry integrations.
-
----
-
-## Monorepo Projects
-
-This workspace contains two primary projects: **QIDI Studio Slicer Automation** and the **Aniva SFF01 Custom 9L Chassis**.
-
-### 1. 🖨️ [QIDI Studio Profile Automation & Settings](qidi-studio/)
-A workspace dedicated to version-controlling and automating [QIDI Studio](https://github.com/QIDITECH/QIDIStudio) (Orca Slicer-based) printer, filament, and process profiles.
-* **AppData Linker:** Bridges your local Windows `%AppData%\QIDIStudio\user\default` profile paths to this Git repo using a custom symlink script (`prepare_windows.cmd`).
-* **Advanced Material Settings:** Houses calibrated filament profiles (e.g., temperatures, flow rates, retraction parameters) optimized for structural fabrication.
-* **Agentic Support:** Standardized JSON structure allowing AI agents to generate or tweak profiles programmatically.
-* **Documentation:** Read more in the [QIDI Studio README](qidi-studio/README.md).
+A collection of self-hosted infrastructure stacks, VPN setup guides, 3D printing automation, and custom hardware projects.
 
 ---
 
-### 2. 📐 [Aniva SFF01: CAD Fabrication Files](sff_case_9L_01/cad_files/)
-Digital design and structural parts for the **Aniva SFF01** — an open-source, modular ~9L Small Form Factor PC chassis.
-* **PC-PBT Material Tuning:** Recesses and captive nut slots are specifically dimensioned to accommodate the rigidity and yield stress of Polymaker PC-PBT to eliminate styrene off-gassing.
-* **Modular Panel Design:** Built for M3 mechanical fasteners with precise dimensional clearance for top active exhaust, long GPU architectures, and motherboard tray cabling.
-* **Documentation:** Read more in the [CAD README](sff_case_9L_01/cad_files/README.md).
+## Repository Index
+
+### 1. 🔐 [forgejo-passkey-ha](forgejo-passkey-ha/)
+Lightweight, VPN-only self-hosted Git forge (**Forgejo**) with **Passkey-only OIDC login** (**Pocket ID**), **Caddy** TLS (Route 53 DNS-01), **PostgreSQL**, Telegram access-request alerts, `restic` point-in-time backups, Active/Standby replication, and an agent skill.
+* **Passkey-Only Web Auth:** Passwordless OIDC via Pocket ID; native Forgejo password login disabled.
+* **Telegram Onboarding:** `POST /request-access` notifies the admin via Telegram when new users request access.
+* **Agentic Workflow:** Includes [forgejo-client skill](forgejo-passkey-ha/skills/forgejo-client/SKILL.md) and `fj` CLI support.
+* **Resilience & Security:** 12-hour dual-target `restic` backups ([DISASTER_RECOVERY.md](forgejo-passkey-ha/DISASTER_RECOVERY.md)), 512 MB push guardrails, and [SECURITY_CHECKLIST.md](forgejo-passkey-ha/SECURITY_CHECKLIST.md).
 
 ---
 
-### 📟 [Aniva SFF01: Microcontroller Telemetry Sub-System](sff_case_9L_01/telemetry_display/)
-Firmware, software, and schematics for the front-panel hardware monitor integrated into the Aniva SFF01 chassis.
-* **ESP32-C6 Firmware (C++):** Arduino-framework firmware using the LovyanGFX library for the Waveshare 1.47" touch LCD. Features dynamic I2C bus-hopping for dual AHT20 ambient sensors and analog motherboard LED activity monitoring.
-* **Host Telemetry Daemon (Python):** Background script that fetches CPU/GPU/SSD thermals and loads using the LibreHardwareMonitor HTTP JSON API and pushes serial data to the display over internal USB.
-* **Solar Dimming:** Auto-dims the display at night using astral calculations based on local coordinates.
-* **Documentation:** Read more in the [Telemetry Display README](sff_case_9L_01/telemetry_display/README.md).
+### 2. 📱 [vpn-guides](vpn-guides/)
+Step-by-step client setup guides with screenshots for connecting mobile devices to the private VPN.
+* **Apple iOS:** [vpn-guides/apple/](vpn-guides/apple/README.md) (Streisand setup guide + `.docx`)
+* **Samsung / Android:** [vpn-guides/samsung/](vpn-guides/samsung/README.md) (v2rayNG setup guide + HTML + `.docx`)
+
+---
+
+### 3. 🖨️ [qidi-studio](qidi-studio/)
+Version-controlling and AI-driven automation for [QIDI Studio](https://github.com/QIDITECH/QIDIStudio) (Orca Slicer-based) printer, filament, and process profiles.
+* **AppData Linker:** Symlinks `%AppData%\QIDIStudio\user\default` to this repo via `prepare_windows.cmd`.
+* **Calibrated Material Profiles:** Structural filament settings and printer upgrade/fix notes.
+* **Documentation:** [qidi-studio/README.md](qidi-studio/README.md).
+
+---
+
+### 4. 📐 [sff_case_9L_01](sff_case_9L_01/)
+Open-source **Aniva SFF01** ~9L Small Form Factor PC chassis — CAD fabrication files and an integrated ESP32-C6 hardware telemetry display.
+* **CAD Fabrication Files ([cad_files/](sff_case_9L_01/cad_files/)):** STEP/STL panels tuned for Polymaker PC-PBT and M3 hardware.
+* **Microcontroller Telemetry ([telemetry_display/](sff_case_9L_01/telemetry_display/)):** Waveshare ESP32-C6 1.47" LCD firmware (LovyanGFX + dual AHT20 sensors + solar dimming) paired with a Windows LibreHardwareMonitor Python daemon.
+* **Documentation:** [sff_case_9L_01/README.md](sff_case_9L_01/README.md).
