@@ -70,7 +70,7 @@ fj api repos/<owner>/<repo>/pulls
 
 ## Host Security & Onboarding Checklist
 
-See [SECURITY_CHECKLIST.md](./SECURITY_CHECKLIST.md) for the mandatory hardening and new-user onboarding checklist, and [DISASTER_RECOVERY.md](./DISASTER_RECOVERY.md) for point-in-time `restic` backups and full recovery procedures. Key points:
+See [SECURITY_CHECKLIST.md](./SECURITY_CHECKLIST.md) for the mandatory hardening checklist, [NEW_USER_ONBOARDING_GUIDE.md](./NEW_USER_ONBOARDING_GUIDE.md) for the step-by-step clean remote VM onboarding walkthrough, and [DISASTER_RECOVERY.md](./DISASTER_RECOVERY.md) for point-in-time `restic` backups and full recovery procedures. Key points:
 - Run Docker/Podman **rootless** under an unprivileged service user.
 - Bind-mount **only** `DATA_DIR` into containers.
 - Restrict VPN firewall rules so dev peers can **only** reach `HTTPS_PORT` (`443`) and `SSH_PORT` (`2222`), never the host OS `sshd` or internal services.
